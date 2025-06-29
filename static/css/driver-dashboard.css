@@ -1,0 +1,478 @@
+
+        /* Dashboard Styles */
+        .dashboard-header {
+            background-color: var(--primary-color);
+            padding: 2rem 0;
+            color: white;
+        }
+
+        .dashboard-header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .driver-welcome h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .driver-welcome p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .dashboard-actions .btn {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dashboard-actions .btn:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .dashboard-content {
+            padding: 3rem 0;
+            background-color: var(--bg-light);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .dashboard-main {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .status-card,
+        .route-map-card,
+        .stops-card,
+        .schedule-card,
+        .info-card,
+        .notices-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+        }
+
+        .status-card h2,
+        .route-map-card h2,
+        .stops-card h2,
+        .schedule-card h2,
+        .info-card h2,
+        .notices-card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            background-color: #f0fdf4;
+            color: #16a34a;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 50%;
+            background-color: #16a34a;
+            position: relative;
+        }
+
+        .status-indicator.active::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #16a34a;
+            opacity: 0.4;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.4;
+            }
+            70% {
+                transform: scale(2);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        .status-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-item {
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: var(--border-radius);
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .status-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--dark-color);
+        }
+
+        .trip-progress {
+            margin-top: 1.5rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .progress-bar {
+            height: 0.5rem;
+            background-color: var(--bg-light);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 99px;
+        }
+
+        .route-map-container {
+            width: 100%;
+            height: 100%;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .driver-map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            background-color: #e9f1f9;
+        }
+
+        .stops-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stop-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .stop-item.active {
+            background-color: rgba(9, 166, 140, 0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stop-marker {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            border-radius: 50%;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stop-details {
+            flex-grow: 1;
+        }
+
+        .stop-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--dark-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .stop-eta {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .stop-actions .btn {
+            padding: 0.4rem;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stop-actions .btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .schedule-item {
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .schedule-item.active {
+            background-color: rgba(9, 166, 140, 0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .schedule-time {
+            font-weight: 500;
+        }
+
+        .schedule-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .status-marker {
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 50%;
+        }
+
+        .status-marker.completed {
+            background-color: #16a34a;
+        }
+
+        .status-marker.in-progress {
+            background-color: var(--primary-color);
+        }
+
+        .status-marker.scheduled {
+            background-color: #9ca3af;
+        }
+
+        .info-content {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+
+        .notices-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .notice-item {
+            padding: 1rem;
+            background-color: var(--bg-light);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .notice-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .notice-title {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .notice-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .notice-content {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-color);
+        }
+
+        /* Responsive styles */
+        @media (min-width: 768px) {
+            .dashboard-header-content {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 2fr 1fr;
+                gap: 2rem;
+            }
+
+            .route-map-container {
+                height: 400px;
+            }
+
+            .status-details {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Add to existing styles */
+        .btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .status-badge.active {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .status-badge.offline {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .news-ticker {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticker-container {
+            display: flex;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            position: relative;
+        }
+
+        .ticker-label {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 1rem;
+            border-radius: 4px;
+            margin-right: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            z-index: 2;
+            position: relative;
+        }
+
+        .ticker-content {
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .ticker-items {
+            display: inline-block;
+            animation: ticker 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        .ticker-item {
+            display: inline-block;
+            padding-right: 3rem;
+        }
+
+        .ticker-items:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translateX(100%);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+        /* Pause animation on hover */
+        .ticker-item:hover {
+            animation-play-state: paused;
+        }

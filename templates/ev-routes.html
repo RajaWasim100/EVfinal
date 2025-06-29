@@ -1,0 +1,561 @@
+{% extends 'layout.html' %}
+
+{% block title %}EV Routes - Spot EV{% endblock %}
+
+{% block extra_head %}
+<head>
+    <link rel="stylesheet" href="/static/css/routes.css">
+</head>
+    <!-- Google Maps API is Enabled  -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpu3sn81YK2HnYjW5JEs7cNv49FqzZttY&callback=initMaps" async defer></script>
+
+    <script>
+    let ev2Map, ev4Map;
+    let ev2Renderer, ev4Renderer;
+    let directionsService;
+
+    const ev2Route = [
+        { lat: 25.07146, lng: 67.30502 },
+        { lat: 25.06915, lng: 67.31714 },
+        { lat: 25.067892, lng: 67.350357 },
+        { lat: 25.01502, lng: 67.30888 },
+        { lat: 24.97968, lng: 67.19254 },
+        { lat: 24.88525, lng: 67.17565 }
+    ];
+
+    const ev4Route = [
+        { lat: 25.07182, lng: 67.30442 },
+        { lat: 25.06784, lng: 67.31736 },
+        { lat: 25.05485, lng: 67.31649 },
+        { lat: 25.03965, lng: 67.31270 },
+        { lat: 24.99557, lng: 67.31665 },
+        { lat: 24.92803, lng: 67.06448 }
+    ];
+
+    function requestDirections(route, service, renderer, map) {
+        const waypoints = route.slice(1, -1).map(point => ({
+            location: new google.maps.LatLng(point.lat, point.lng),
+            stopover: true
+        }));
+
+        const request = {
+            origin: route[0],
+            destination: route[route.length - 1],
+            waypoints: waypoints,
+            travelMode: google.maps.TravelMode.DRIVING
+        };
+
+        service.route(request, (response, status) => {
+            if (status === "OK") {
+                renderer.setDirections(response);
+                const bounds = new google.maps.LatLngBounds();
+                route.forEach(point => bounds.extend(point));
+                map.fitBounds(bounds);
+            } else {
+                console.error("Directions request failed: " + status);
+            }
+        });
+    }
+
+    function initEv2Map() {
+        directionsService = new google.maps.DirectionsService();
+
+        ev2Map = new google.maps.Map(document.getElementById("ev2Map"), {
+            center: ev2Route[0],
+            zoom: 12
+        });
+
+        ev2Renderer = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+        ev2Renderer.setMap(ev2Map);
+
+        new google.maps.Marker({ position: ev2Route[0], map: ev2Map, title: "Start Point" });
+        new google.maps.Marker({ position: ev2Route[ev2Route.length - 1], map: ev2Map, title: "End Point" });
+
+        requestDirections(ev2Route, directionsService, ev2Renderer, ev2Map);
+    }
+
+    function initEv4Map() {
+        directionsService = new google.maps.DirectionsService();
+
+        ev4Map = new google.maps.Map(document.getElementById("ev4Map"), {
+            center: ev4Route[0],
+            zoom: 12
+        });
+
+        ev4Renderer = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+        ev4Renderer.setMap(ev4Map);
+
+        new google.maps.Marker({ position: ev4Route[0], map: ev4Map, title: "Start Point" });
+        new google.maps.Marker({ position: ev4Route[ev4Route.length - 1], map: ev4Map, title: "End Point" });
+
+        requestDirections(ev4Route, directionsService, ev4Renderer, ev4Map);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('.route-tab');
+        const panes = document.querySelectorAll('.route-tab-pane');
+
+        let ev2Initialized = false;
+        let ev4Initialized = false;
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                panes.forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+
+                const targetId = tab.getAttribute('data-route');
+                const targetPane = document.getElementById(targetId);
+                if (targetPane) targetPane.classList.add('active');
+
+                if (targetId === 'ev2') {
+                    if (!ev2Initialized) {
+                        initEv2Map();
+                        ev2Initialized = true;
+                    } else {
+                        setTimeout(() => google.maps.event.trigger(ev2Map, 'resize'), 200);
+                    }
+                } else if (targetId === 'ev4') {
+                    if (!ev4Initialized) {
+                        initEv4Map();
+                        ev4Initialized = true;
+                    } else {
+                        setTimeout(() => google.maps.event.trigger(ev4Map, 'resize'), 200);
+                    }
+                }
+            });
+        });
+
+        // Optionally trigger the default tab on load
+        tabs[0].click();
+    });
+
+    function updateScheduleHighlighting() {
+        const now = new Date();
+        const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes since midnight
+
+        // Get all schedule items
+        const scheduleItems = document.querySelectorAll('.schedule-item');
+        
+        scheduleItems.forEach(item => {
+            const timeText = item.querySelector('.time').textContent;
+            const [hours, minutes] = timeText.split(':').map(num => parseInt(num));
+            const scheduleTime = hours * 60 + minutes;
+
+            // Remove any existing status classes
+            item.classList.remove('completed', 'current', 'upcoming');
+
+            // Compare times and add appropriate class
+            if (currentTime > scheduleTime + 30) { // More than 30 minutes past
+                item.classList.add('completed');
+            } else if (currentTime >= scheduleTime - 15 && currentTime <= scheduleTime + 30) { // Within 15 minutes before to 30 minutes after
+                item.classList.add('current');
+            } else if (currentTime < scheduleTime) { // Upcoming
+                item.classList.add('upcoming');
+            }
+        });
+    }
+
+    // Update highlighting every minute
+    updateScheduleHighlighting();
+    setInterval(updateScheduleHighlighting, 60000);
+</script>
+
+
+{% endblock %}
+
+
+{% block content %}
+    <!-- Routes Hero Section -->
+    <section class="routes-hero">
+        <div class="container">
+            <div class="routes-hero-content">
+                <h1>Our Electric Bus Routes</h1>
+                <p>Explore our convenient routes connecting Bahria Town Karachi and the city</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Routes Overview Section -->
+    <section class="routes-overview">
+        <div class="container">
+            <div class="section-header">
+                <h2>Routes Overview</h2>
+                <p>Choose the route that best fits your travel needs</p>
+            </div>
+            
+            <div class="routes-tabs">
+                <div class="routes-tab-nav">
+                    <button class="route-tab active" data-route="ev2">EV-2 Route</button>
+                    <button class="route-tab" data-route="ev4">EV-4 Route</button>
+                </div>
+                
+                <div class="routes-tab-content">
+                    <div class="route-tab-pane active" id="ev2">
+                        <div class="route-map">
+                            <div id="ev2Map" class="map-container" >
+
+                            </div>
+                        </div>
+                        
+                        <div class="route-info">
+                            <div class="route-header">
+                                <div class="route-title">
+                                    <div class="route-badge">EV2</div>
+                                    <h3>EV-2 Route</h3>
+                                </div>
+                                <a href="{{ url_for('track') }}" class="btn btn-sm btn-primary">Track Now</a>
+                            </div>
+                                                        
+                            <div class="route-stats">
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Travel Time</div>
+                                        <div class="stat-value">50 minutes</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-road"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Distance</div>
+                                        <div class="stat-value">30 km</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Stops</div>
+                                        <div class="stat-value">7 stops</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Fare</div>
+                                        <div class="stat-value">Rs. 120</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="route-stops">
+                                <h4>Designated Route Stops</h4>
+                                <div class="stops-timeline">
+                                    <div class="stop-item">
+                                        <i class="fa-solid fa-bus" style="color: var(--primary-color);"></i>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Bahria Town EV Terminal</div>
+                                            <div class="stop-details">First Stop • Services start at 7:00 AM</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Precinct 11A</div>
+                                            <div class="stop-details">5 min from previous stop</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Ali Flyover</div>
+                                            <div class="stop-details">10 min from previous stop</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Bahria Auditorium</div>
+                                            <div class="stop-details">10 min from previous stop</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Bahria Internation Hospital</div>
+                                            <div class="stop-details">15 min from previous stop</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Bahria Town Main Gate</div>
+                                            <div class="stop-details">10 min from previous stop</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stop-item">
+                                        <i class="fa-solid fa-bus" style="color: var(--primary-color);"></i>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Malir Halt</div>
+                                            <div class="stop-details">Terminal • Last bus returns at 10:00 PM</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="route-schedule">
+                                <h4>Schedule</h4>
+                                <div class="schedule-group">
+                                    <div class="schedule-heading">
+                                        <div class="direction-badge outbound">Bahria Town</div>
+                                        &#8644
+                                        <div class="direction-badge inbound">Malir Halt</div>
+                                    </div>
+                                    <div class="schedule-times">
+                                        <div class="time-chip">7:00 AM</div>
+                                        <div class="time-chip">7:30 AM</div>
+                                        <div class="time-chip">8:00 AM</div>
+                                        <div class="time-chip">8:30 AM</div>
+                                        <div class="time-chip">9:00 AM</div>
+                                        <div class="time-chip">9:30 AM</div>
+                                        <div class="time-chip">10:00 AM</div>
+                                        <div class="time-chip">10:30 AM</div>
+                                        <div class="time-chip">11:00 AM</div>
+                                        <div class="time-chip">11:30 AM</div>
+                                        <div class="time-chip">12:00 PM</div>
+                                        <div class="time-chip">12:30 PM</div>
+                                        <div class="time-chip">1:00 PM</div>
+                                        <div class="time-chip">1:30 PM</div>
+                                        <div class="time-chip">2:00 PM</div>
+                                        <div class="time-chip">2:30 PM</div>
+                                        <div class="time-chip">3:00 PM</div>
+                                        <div class="time-chip">3:30 PM</div>
+                                        <div class="time-chip">4:00 PM</div>
+                                        <div class="time-chip">4:30 PM</div>
+                                        <div class="time-chip">5:00 PM</div>
+                                        <div class="time-chip">5:30 PM</div>
+                                        <div class="time-chip">6:00 PM</div>
+                                        <div class="time-chip">6:30 PM</div>
+                                        <div class="time-chip">7:00 PM</div>
+                                        <div class="time-chip">7:30 PM</div>
+                                        <div class="time-chip">8:00 PM</div>
+                                        <div class="time-chip">8:30 PM</div>
+                                        <div class="time-chip">9:00 PM</div>
+                                        <div class="time-chip">9:30 PM</div>
+                                        <div class="time-chip">10:00 PM</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="route-tab-pane" id="ev4">
+                        <div class="route-map">
+                            <div id="ev4Map" class="map-container">
+
+                            </div>
+                        </div>
+                        
+                        <div class="route-info">
+                            <div class="route-header">
+                                <div class="route-title">
+                                    <div class="route-badge">EV4</div>
+                                    <h3>EV-4 Route</h3>
+                                </div>
+                                <a href="{{ url_for('track') }}" class="btn btn-sm btn-primary">Track Now</a>
+                            </div>
+                            
+                           
+                            
+                            <div class="route-stats">
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Travel Time</div>
+                                        <div class="stat-value">50 minutes</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-road"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Distance</div>
+                                        <div class="stat-value">40 km</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Stops</div>
+                                        <div class="stat-value">6 stops</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div>
+                                        <div class="stat-label">Fare</div>
+                                        <div class="stat-value">Rs. 120</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="route-stops">
+                                <h4>Designated Route Stops</h4>
+                                <div class="stops-timeline">
+                                    <div class="stop-item">
+                                        <i class="fa-solid fa-bus" style="color: var(--primary-color);"></i>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Bahria Town EV Terminal</div>
+                                            <div class="stop-details">First Stop • Services start at 7:00 AM</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Ali Square</div>
+                                            <div class="stop-details">10 min from previous stop</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Midway Commercial</div>
+                                            <div class="stop-details">10 min from previous stop</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Bahria International Hospital</div>
+                                            <div class="stop-details">10 min from previous stop</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stop-item">
+                                        <div class="stop-bullet"></div>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Bahria Town Main Gate</div>
+                                            <div class="stop-details">10 min from previous stop</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="stop-item">
+                                        <i class="fa-solid fa-bus" style="color: var(--primary-color);"></i>
+                                        <div class="stop-info">
+                                            <div class="stop-name">Ayesha Manzil</div>
+                                            <div class="stop-details">Terminal • Last bus returns at 10:00 PM</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="route-schedule">
+                                <h4>Schedule</h4>
+                                <div class="schedule-group">
+                                    <div class="schedule-heading">
+                                        <div class="direction-badge outbound">Bahria Town</div>
+                                        &#8644
+                                        <div class="direction-badge inbound">Ayesha Manzil</div>
+                                        
+                                    </div>
+                                    <div class="schedule-times">
+                                        <div class="time-chip">7:00 AM</div>
+                                        <div class="time-chip">7:30 AM</div>
+                                        <div class="time-chip">8:00 AM</div>
+                                        <div class="time-chip">8:30 AM</div>
+                                        <div class="time-chip">9:00 AM</div>
+                                        <div class="time-chip">9:30 AM</div>
+                                        <div class="time-chip">10:00 AM</div>
+                                        <div class="time-chip">10:30 AM</div>
+                                        <div class="time-chip">11:00 AM</div>
+                                        <div class="time-chip">11:30 AM</div>
+                                        <div class="time-chip">12:00 PM</div>
+                                        <div class="time-chip">12:30 PM</div>
+                                        <div class="time-chip">1:00 PM</div>
+                                        <div class="time-chip">1:30 PM</div>
+                                        <div class="time-chip">2:00 PM</div>
+                                        <div class="time-chip">2:30 PM</div>
+                                        <div class="time-chip">3:00 PM</div>
+                                        <div class="time-chip">3:30 PM</div>
+                                        <div class="time-chip">4:00 PM</div>
+                                        <div class="time-chip">4:30 PM</div>
+                                        <div class="time-chip">5:00 PM</div>
+                                        <div class="time-chip">5:30 PM</div>
+                                        <div class="time-chip">6:00 PM</div>
+                                        <div class="time-chip">6:30 PM</div>
+                                        <div class="time-chip">7:00 PM</div>
+                                        <div class="time-chip">7:30 PM</div>
+                                        <div class="time-chip">8:00 PM</div>
+                                        <div class="time-chip">8:30 PM</div>
+                                        <div class="time-chip">9:00 PM</div>
+                                        <div class="time-chip">9:30 PM</div>
+                                        <div class="time-chip">10:00 PM</div>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Service Notes Section -->
+    <section class="service-notes">
+        <div class="container">
+            <div class="notes-container">
+                <h3>Important Notes</h3>
+                <ul class="notes-list">
+                    <li>
+                        <i class="fas fa-info-circle"></i>
+                        <span>Schedules may be affected by traffic conditions and weather.</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-info-circle"></i>
+                        <span>Children under 5 years travel free when accompanied by a paying adult.</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-info-circle"></i>
+                        <span>Fares are payable in cash on the bus, exact change is appreciated.</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-info-circle"></i>
+                        <span>All buses are accessible for passengers with disabilities.</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-info-circle"></i>
+                        <span>Special schedule applies on public holidays - please check our announcements.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+  
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/routes.js') }}"></script>
+{% endblock %}

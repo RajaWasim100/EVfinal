@@ -1,0 +1,699 @@
+{% extends 'layout.html' %}
+
+{% block title %}Track Bus - Spot EV{% endblock %}
+
+{% block extra_head %}
+<head>
+    <link rel="stylesheet" href="/static/css/trackcontrol.css">
+</head>
+    <!-- Google Maps API with Distance Matrix Service -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpu3sn81YK2HnYjW5JEs7cNv49FqzZttY&callback=initMap&libraries=geometry,places" async defer></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_pIQFmNqoCqP1hh2EZynYL58VuLQfJWA",
+      authDomain: "ev-app-9d9ad.firebaseapp.com",
+      databaseURL: "https://ev-app-9d9ad-default-rtdb.firebaseio.com",
+      projectId: "ev-app-9d9ad",
+      storageBucket: "ev-app-9d9ad.appspot.com",
+      messagingSenderId: "121460657765",
+      appId: "1:121460657765:web:6953e8791f944c4f0c408c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let map;
+    let userPosition = null;
+    let userMarker = null;
+    let markers = {};
+    let directionsService, directionsRenderer;
+    let distanceMatrixService;
+    let selectedRoute = null;
+    let activeBuses = {};
+    let infoWindow = null;
+    let userWatchId = null;
+
+    function initMap() {
+        // Center on Karachi
+        const center = { lat: 25.07109950250366, lng: 67.30494994195148 }; 
+        
+        // Initialize services
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+            suppressMarkers: true,
+            polylineOptions: {
+                strokeColor: "#09a68c",
+                strokeWeight: 5
+            }
+        });
+        distanceMatrixService = new google.maps.DistanceMatrixService();
+        infoWindow = new google.maps.InfoWindow();
+        
+        // Initialize map
+        map = new google.maps.Map(document.getElementById('busMap'), {
+            center: center,
+            zoom: 11,
+            styles: [
+                {
+                    featureType: "poi",
+                    elementType: "labels",
+                    stylers: [{ visibility: "off" }]
+                }
+            ]
+        });
+
+        directionsRenderer.setMap(map);
+
+        // Start tracking user location
+        if (navigator.geolocation) {
+            userWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                userPosition = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                    
+                    // Remove existing user marker if it exists
+                    if (userMarker) {
+                        userMarker.setMap(null);
+                    }
+                
+                // Add user marker
+                userMarker = new google.maps.Marker({
+                    position: userPosition,
+                    map: map,
+                    title: 'Your Location',
+                    icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 10,
+                            fillColor: "#4285F4",
+                            fillOpacity: 1,
+                            strokeColor: "#ffffff",
+                            strokeWeight: 2
+                    },
+                    zIndex: 999
+                });
+
+                    // Center map on user if no route is selected
+                    if (!selectedRoute) {
+                map.setCenter(userPosition);
+                map.setZoom(13);
+                    }
+
+                    // If route is selected, find closest bus
+                if (selectedRoute) {
+                    findClosestBus();
+                }
+                },
+                (error) => {
+                console.error("Error getting user location:", error);
+                alert("Please enable location services to see nearby buses.");
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 1000,
+                    timeout: 5000
+                }
+            );
+        }
+
+        // Add route selection listener
+        document.getElementById('routeSelect').addEventListener('change', function(e) {
+            selectedRoute = e.target.value;
+            if (selectedRoute) {
+                document.querySelector('.track-btn').disabled = false;
+                startTracking(selectedRoute);
+            } else {
+                document.querySelector('.track-btn').disabled = true;
+                stopTracking();
+            }
+        });
+
+        // Add track button listener
+        document.querySelector('.track-btn').addEventListener('click', function() {
+            if (selectedRoute) {
+                // Hide the initial overlay completely
+                const mapOverlay = document.getElementById('mapOverlay');
+                if (mapOverlay) {
+                    mapOverlay.style.display = 'none';
+                }
+                
+                startTracking(selectedRoute);
+                
+                // Show active buses section under the map
+                const activeBusesSection = document.createElement('div');
+                activeBusesSection.id = 'activeBusesSection';
+                activeBusesSection.innerHTML = `
+                    <div class="status-header">
+                        <h3>Live Tracking</h3>
+                        <p>Last updated: ${new Date().toLocaleTimeString()}</p>
+                    </div>
+                    <div class="status-details">
+                        <p><strong>Route:</strong> ${selectedRoute.toUpperCase()}</p>
+                        <p><strong>Active buses:</strong> <span id="activeBusCount">0</span></p>
+                        <p id="busStatusMessage" class="text-info">Waiting for drivers to start their trips...</p>
+                    </div>
+                `;
+                
+                // Remove existing section if it exists
+                const existingSection = document.getElementById('activeBusesSection');
+                if (existingSection) {
+                    existingSection.remove();
+                }
+                
+                // Add the section after the map
+                const mapContainer = document.getElementById('busMap');
+                mapContainer.parentNode.insertBefore(activeBusesSection, mapContainer.nextSibling);
+            }
+        });
+
+        // Add refresh button listener
+        document.getElementById('refreshTracking').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (selectedRoute) {
+                findClosestBus();
+            }
+        });
+
+        // Initialize InfoWindow
+        infoWindow = new google.maps.InfoWindow();
+        
+        // Make calculateRoute available globally
+        window.calculateRoute = calculateRoute;
+    }
+
+    function normalizeRouteId(routeId) {
+        return (routeId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function startTracking(routeId) {
+        // Clear existing tracking
+        stopTracking();
+        
+        // Start tracking drivers for this route
+        db.ref("users").on("value", (snapshot) => {
+            const users = snapshot.val();
+            console.log('Firebase users data:', users);
+            
+            // Clear old markers
+            for (let id in markers) {
+                markers[id].setMap(null);
+                delete markers[id];
+            }
+
+            if (!users) {
+                updateStatusNoDrivers(routeId);
+                return;
+            }
+
+            let busCount = 0;
+            const bounds = new google.maps.LatLngBounds();
+
+            // Filter and process only active drivers on the selected route
+            Object.entries(users).forEach(([userId, userData]) => {
+                // Normalize route IDs for comparison
+                const userRouteId = normalizeRouteId(userData.routeId);
+                const selectedRouteId = normalizeRouteId(routeId);
+
+                if (userData.isActive && 
+                    userRouteId === selectedRouteId && 
+                    userData.latitude && userData.longitude) {  // Check for latitude/longitude
+                    
+                    busCount++;
+                    const position = new google.maps.LatLng(
+                        parseFloat(userData.latitude),
+                        parseFloat(userData.longitude)
+                    );
+                    
+                    // Create or update marker
+                    if (!markers[userId]) {
+                        markers[userId] = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            title: `Bus ${userData.busId || userId}`,
+                            icon: {
+                                url: "/static/css/images/bus-solid.png",  // <-- Place your icon in static folder
+                                scaledSize: new google.maps.Size(20, 20),  // Adjust size as needed
+                                anchor: new google.maps.Point(20, 20) // Center the icon
+                            },
+                            zIndex: 998
+                        });
+
+                        // Add click listener for info window
+                    //     markers[userId].addListener('click', () => {
+                    //         const infoContent = `
+                    //             <div class="info-window">
+                    //                 <h3>Bus Information</h3>
+                    //                 <p><strong>Bus ID:</strong> ${userData.busId || 'N/A'}</p>
+                    //                 <p><strong>Speed:</strong> ${userData.speed || '0'} km/h</p>
+                    //                 <p><strong>Status:</strong> ${userData.status || 'Active'}</p>
+                    //                 <p><strong>Last Updated:</strong> ${new Date().toLocaleString()}</p>
+                    //             </div>
+                    //         `;
+                    //         infoWindow.setContent(infoContent);
+                    //         infoWindow.open(map, markers[userId]);
+                    //     });
+                    // } else {
+                    //     markers[userId].setPosition(position);
+                    // markers[userId].addListener('click', () => showBusInfo(userData, markers[userId]));
+
+                     }
+
+                     
+
+                    // Store bus data for route calculation
+                    activeBuses[userId] = {
+                        position: position,
+                        lat: position.lat(),
+                        lng: position.lng(),
+                        busId: userData.busId || userId,
+                        speed: userData.speed || 0,
+                        routeId: userData.routeId,
+                        status: userData.status || 'Active',
+                        timestamp: userData.timestamp || new Date().toISOString()
+
+                    };
+
+                    markers[userId].addListener('click', () => {
+                        showBusInfo(activeBuses[userId], markers[userId]);
+                    });
+
+                    bounds.extend(position);
+                    }
+            });
+
+            // Update active buses count and status
+            const activeBusCount = document.getElementById('activeBusCount');
+            const busStatusMessage = document.getElementById('busStatusMessage');
+            
+            if (activeBusCount && busStatusMessage) {
+                activeBusCount.textContent = busCount;
+                
+                if (busCount > 0) {
+                    busStatusMessage.textContent = `${busCount} bus${busCount > 1 ? 'es' : ''} currently active on this route`;
+                    busStatusMessage.className = 'text-success';
+                } else {
+                    busStatusMessage.textContent = 'No active buses found on this route';
+                    busStatusMessage.className = 'text-warning';
+                }
+            }
+
+            // Update last updated time
+            const lastUpdated = document.querySelector('#activeBusesSection .status-header p');
+            if (lastUpdated) {
+                lastUpdated.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+            }
+            
+            // Fit map to show all buses
+            if (Object.keys(markers).length > 0) {
+                map.fitBounds(bounds);
+            }
+        });
+    }
+
+    function updateStatusNoDrivers(routeId) {
+        const activeBusCount = document.getElementById('activeBusCount');
+        const busStatusMessage = document.getElementById('busStatusMessage');
+        
+        if (activeBusCount && busStatusMessage) {
+            activeBusCount.textContent = '0';
+            busStatusMessage.textContent = 'No active buses found on this route';
+            busStatusMessage.className = 'text-warning';
+        }
+    }
+
+    function stopTracking() {
+        // Clear all markers and their watchers
+        for (let id in markers) {
+            if (markers[id].watchId) {
+                navigator.geolocation.clearWatch(markers[id].watchId);
+            }
+            markers[id].setMap(null);
+            delete markers[id];
+        }
+        
+        // Clear Firebase listeners
+        if (db.ref("users").off) {
+            db.ref("users").off();
+        }
+    }
+
+    function findClosestBus() {
+        if (!userPosition || !selectedRoute || Object.keys(markers).length === 0) return;
+
+        let closestBus = null;
+        let shortestDistance = Infinity;
+
+        // Calculate distances to all buses
+        Object.entries(markers).forEach(([id, marker]) => {
+            const busPosition = marker.getPosition();
+            const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                new google.maps.LatLng(userPosition),
+                busPosition
+            );
+
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                closestBus = { id, position: busPosition };
+            }
+        });
+
+        if (closestBus) {
+            const bus = activeBuses[closestBus.id];
+            calculateRoute(userPosition, closestBus.position, bus);
+        }
+    }
+    // abdullah
+// function calculate route
+function calculateRoute(origin, destination, bus, callback) {
+    if (!origin || !destination) return;
+
+    const request = {
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+        drivingOptions: {
+            departureTime: new Date(),
+            trafficModel: google.maps.TrafficModel.BEST_GUESS
+        }
+    };
+
+    directionsService.route(request, (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+            directionsRenderer.setDirections(result);
+
+            distanceMatrixService.getDistanceMatrix(
+                {
+                    origins: [origin],
+                    destinations: [destination],
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    drivingOptions: {
+                        departureTime: new Date(),
+                        trafficModel: google.maps.TrafficModel.BEST_GUESS
+                    }
+                },
+                (response, status) => {
+                    if (status === 'OK') {
+                        const route = response.rows[0].elements[0];
+                        const distance = route.distance.text;
+                        const durationInTraffic = route.duration_in_traffic
+                            ? route.duration_in_traffic.text
+                            : route.duration.text;
+                        const arrivalTime = new Date(
+                            Date.now() +
+                            (route.duration_in_traffic
+                                ? route.duration_in_traffic.value
+                                : route.duration.value) * 1000
+                        );
+
+                        if (callback) {
+                            callback({ distance, durationInTraffic, arrivalTime: arrivalTime.toLocaleTimeString() });
+                        }
+                    }
+                }
+            );
+        }
+    });
+}
+// raja functionality
+    // function calculateRoute(origin, destination, bus) {
+    //     if (!origin || !destination) return;
+
+    //     // Calculate route
+    //     const request = {
+    //         origin: origin,
+    //         destination: destination,
+    //         travelMode: google.maps.TravelMode.DRIVING,
+    //         drivingOptions: {
+    //             departureTime: new Date(),
+    //             trafficModel: google.maps.TrafficModel.BEST_GUESS
+    //         }
+    //     };
+
+    //     directionsService.route(request, (result, status) => {
+    //         if (status === google.maps.DirectionsStatus.OK) {
+    //             // Display the route
+    //             directionsRenderer.setDirections(result);
+
+    //             // Calculate ETA with traffic
+    //             distanceMatrixService.getDistanceMatrix({
+    //                 origins: [origin],
+    //                 destinations: [destination],
+    //                 travelMode: google.maps.TravelMode.DRIVING,
+    //                 drivingOptions: {
+    //                     departureTime: new Date(),
+    //                     trafficModel: google.maps.TrafficModel.BEST_GUESS
+    //                 }
+    //             }, (response, status) => {
+    //                 if (status === 'OK') {
+    //                     const route = response.rows[0].elements[0];
+    //                     const duration = route.duration.text;
+    //                     const durationInTraffic = route.duration_in_traffic ? route.duration_in_traffic.text : duration;
+    //                     const distance = route.distance.text;
+
+    //                     // Calculate arrival time
+    //                     const now = new Date();
+    //                     const arrivalTime = new Date(now.getTime() + (route.duration_in_traffic ? route.duration_in_traffic.value : route.duration.value) * 1000);
+
+    //                     // Update info window with ETA
+    //                     const content = `
+    //                         <div class="bus-info-window">
+    //                             <h3>Bus ${bus.busId || 'N/A'}</h3>
+    //                             <p><strong>Route:</strong> ${bus.routeId ? bus.routeId.toUpperCase() : 'N/A'}</p>
+    //                             <p><strong>Distance:</strong> ${distance}</p>
+    //                             <p><strong>Estimated Time:</strong> ${durationInTraffic}</p>
+    //                             <p><strong>Expected Arrival:</strong> ${arrivalTime.toLocaleTimeString()}</p>
+    //                             <p><strong>Current Speed:</strong> ${bus.speed ? bus.speed + ' km/h' : 'N/A'}</p>
+    //                             <p><strong>Last Updated:</strong> ${new Date(bus.timestamp).toLocaleTimeString()}</p>
+    //                         </div>
+    //                     `;
+
+    //                     if (infoWindow) {
+    //                         infoWindow.close();
+    //                     }
+
+    //                     // Show the info window at the bus marker
+    //                     const busMarker = markers[Object.keys(markers)[0]];
+    //                     infoWindow = new google.maps.InfoWindow({
+    //                         content: content
+    //                     });
+    //                     infoWindow.open(map, busMarker);
+    //                 } else {
+    //                     console.error('Error calculating distance matrix:', status);
+    //                 }
+    //             });
+    //         } else {
+    //             console.error('Error calculating route:', status);
+    //         }
+    //     });
+    // }
+
+     // abdullah
+    // show bus info function
+// function showBusInfo(bus, marker) {
+//     const baseContent = `
+//         <div class="bus-info-window">
+//             <h3>Bus ${bus.busId || 'N/A'}</h3>
+//             <p><strong>Route:</strong> ${bus.routeId ? bus.routeId.toUpperCase() : 'N/A'}</p>
+//             <p><strong>Speed:</strong> ${bus.speed ? bus.speed + ' km/h' : 'N/A'}</p>
+//             <p><strong>Last Updated:</strong> ${new Date(bus.timestamp).toLocaleTimeString()}</p>
+//             ${
+//                 userPosition
+//                 ? `<button class="btn btn-primary" id="getRouteEtaBtn">Get Route & ETA</button>`
+//                 : '<p class="text-muted">Enable location to get ETA</p>'
+//             }
+//         </div>
+//     `;
+
+//     // if (infoWindow) {
+//     //     infoWindow.close();
+//     // }
+
+//     infoWindow = new google.maps.InfoWindow({ content: baseContent });
+//     infoWindow.open(map, marker);
+
+//     // Attach event listener once InfoWindow's DOM is ready
+//     google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+//         const btn = document.getElementById('getRouteEtaBtn');
+//         if (btn) {
+//             btn.addEventListener('click', () => {
+//                 calculateRoute(
+//                     userPosition,
+//                     { lat: bus.lat, lng: bus.lng },
+//                     bus,
+//                     (routeInfo) => {
+//                         const newContent = `
+//                             <div class="bus-info-window">
+//                                 <h3>Bus ${bus.busId || 'N/A'}</h3>
+//                                 <p><strong>Route:</strong> ${bus.routeId ? bus.routeId.toUpperCase() : 'N/A'}</p>
+//                                 <p><strong>Speed:</strong> ${bus.speed ? bus.speed + ' km/h' : 'N/A'}</p>
+//                                 <p><strong>Distance:</strong> ${routeInfo.distance}</p>
+//                                 <p><strong>Estimated Time:</strong> ${routeInfo.durationInTraffic}</p>
+//                                 <p><strong>Expected Arrival:</strong> ${routeInfo.arrivalTime}</p>
+//                                 <p><strong>Last Updated:</strong> ${new Date(bus.timestamp).toLocaleTimeString()}</p>
+//                             </div>
+//                         `;
+//                         infoWindow.setContent(newContent); // Refresh infoWindow
+//                     }
+//                 ); // close calculateRoute
+//             }); // close btn click listener
+//         } // close if(btn)
+//     }); // close domready listener
+// } // close showBusInfo
+
+// abdullah 2nd
+function showBusInfo(bus, marker) {
+    // Base content with a loading placeholder for distance/ETA
+    const baseContent = `
+        <div class="bus-info-window">
+            <h3>Bus ${bus.busId || 'N/A'}</h3>
+            <p><strong>Route:</strong> ${bus.routeId ? bus.routeId.toUpperCase() : 'N/A'}</p>
+            <p><strong>Speed:</strong> ${bus.speed ? bus.speed + ' km/h' : 'N/A'}</p>
+            <p><strong>Distance:</strong> <span id="distanceField">Calculating...</span></p>
+            <p><strong>Estimated Time:</strong> <span id="etaField">Calculating...</span></p>
+            <p><strong>Expected Arrival:</strong> <span id="arrivalField">Calculating...</span></p>
+            <p><strong>Last Updated:</strong> ${new Date(bus.timestamp).toLocaleTimeString()}</p>
+        </div>
+    `;
+
+    // Close any previously opened infoWindow
+    if (infoWindow) {
+        infoWindow.close();
+    }
+
+    // Open infoWindow initially with placeholders
+    infoWindow = new google.maps.InfoWindow({ content: baseContent });
+    infoWindow.open(map, marker);
+
+    // 🚀 Automatically calculate the route and ETA as soon as this is displayed
+    if (userPosition) {
+        calculateRoute(
+            userPosition,
+            { lat: bus.lat, lng: bus.lng },
+            bus,
+            (routeInfo) => {
+                // Update infoWindow content with calculated values
+                const newContent = `
+                    <div class="bus-info-window">
+                        <h3>Bus ${bus.busId || 'N/A'}</h3>
+                        <p><strong>Route:</strong> ${bus.routeId ? bus.routeId.toUpperCase() : 'N/A'}</p>
+                        <p><strong>Speed:</strong> ${bus.speed ? bus.speed + ' km/h' : 'N/A'}</p>
+                        <p><strong>Distance:</strong> ${routeInfo.distance}</p>
+                        <p><strong>Estimated Time:</strong> ${routeInfo.durationInTraffic}</p>
+                        <p><strong>Expected Arrival:</strong> ${routeInfo.arrivalTime}</p>
+                        <p><strong>Last Updated:</strong> ${new Date(bus.timestamp).toLocaleTimeString()}</p>
+                    </div>
+                `;
+                infoWindow.setContent(newContent); // Refresh infoWindow
+            }
+        );
+    }
+}
+
+// raja
+    // function showBusInfo(bus, marker) {
+    //     const content = `
+    //         <div class="bus-info-window">
+    //             <h3>Bus ${bus.busId || 'N/A'}</h3>
+    //             <p><strong>Route:</strong> ${bus.routeId ? bus.routeId.toUpperCase() : 'N/A'}</p>
+    //             <p><strong>Speed:</strong> ${bus.speed ? bus.speed + ' km/h' : 'N/A'}</p>
+    //             <p><strong>Last Updated:</strong> ${new Date(bus.timestamp).toLocaleTimeString()}</p>
+    //             ${userPosition ? `
+    //                 <button class="btn btn-primary" onclick="calculateRoute(
+    //                     {lat: ${userPosition.lat}, lng: ${userPosition.lng}},
+    //                     {lat: ${bus.lat}, lng: ${bus.lng}},
+    //                     ${JSON.stringify(bus)}
+    //                 )">
+    //                     <i class="fas fa-route"></i> Get Route & ETA
+    //                 </button>
+    //             ` : '<p class="text-muted">Enable location to get ETA</p>'}
+    //         </div>
+    //     `;
+        
+    //     if (infoWindow) {
+    //         infoWindow.close();
+    //     }
+        
+    //     infoWindow = new google.maps.InfoWindow({
+    //         content: content
+    //     });
+        
+    //     infoWindow.open(map, marker);
+    // }
+
+    // // Initialize map when the page loads
+    // window.initMap = initMap;
+
+    // Clean up when leaving the page
+    window.addEventListener('beforeunload', function() {
+        stopTracking();
+        if (userWatchId) {
+            navigator.geolocation.clearWatch(userWatchId);
+        }
+    });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <!-- Track Section -->
+    <section class="track-section">
+        <div class="container">
+            <div class="section-header">
+                <h1>Track Your Bus in Real-Time</h1>
+                <p>See where your bus is and get estimated arrival times</p>
+            </div>
+
+            <div class="track-filters">
+                <div class="filter-group">
+                    <label for="routeSelect">Select Route</label>
+                    <select id="routeSelect" class="form-control">
+                        <option value="" selected disabled>Choose a route</option>
+                        <option value="ev2">EV2 (BTK to Malir Halt)</option>
+                        <option value="ev4">EV4 (BTK to Ayesha Manzil)</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary track-btn" disabled>
+                    <i class="fas fa-location-arrow"></i> Track Now
+                </button>
+            </div>
+
+            <div class="tracker-container">
+                <div class="tracker-map">
+                    <div id="busMap" class="bus-map"></div>
+                    <div class="map-overlay" id="mapOverlay">
+                        <div class="map-overlay-content">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <p>Select a route to track your bus</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="track-help">
+                <h3>Having Trouble?</h3>
+                <p>If you're experiencing issues tracking your bus, try these options:</p>
+                <div class="help-options">
+                    <a href="#" class="help-option" id="refreshTracking">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Refresh Tracking</span>
+                    </a>
+                    <a href="{{ url_for('contact') }}" class="help-option">
+                        <i class="fas fa-headset"></i>
+                        <span>Contact Us</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+{% endblock %}
+
+{% block scripts %}{% endblock %}

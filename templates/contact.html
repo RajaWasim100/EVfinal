@@ -1,0 +1,294 @@
+{% extends 'layout.html' %}
+
+{% block title %}Contact Us - Spot EV{% endblock %}
+
+{% block content %}
+<head>
+    <link rel="stylesheet" href="/static/css/contact.css">
+</head>
+<!-- Contact Hero Section -->
+<section class="contact-hero">
+    <header class="contact-hero-content">
+        <h1>Get in Touch</h1>
+        <p>We're here to answer your questions and help you with any issues you might have</p>
+    </header>
+</section>
+
+<!-- Contact Information Section -->
+<section class="contact-info container">
+    <div class="contact-grid">
+
+        <!-- Left Side: Contact Details -->
+        <article class="contact-details">
+            <h2>Contact Information</h2>
+            <p>Reach out to us through any of the following channels:</p>
+
+            <section class="contact-methods">
+
+                <article class="contact-method">
+                    <i class="fas fa-phone-alt method-icon"></i>
+                    <div class="method-details">
+                        <h3>Phone</h3>
+                        <p>+92 21 3456 7890</p>
+                        <p class="text-muted">Available 9:00 AM - 8:00 PM, Monday to Saturday</p>
+                    </div>
+                </article>
+
+                <article class="contact-method">
+                    <i class="fas fa-envelope method-icon"></i>
+                    <div class="method-details">
+                        <h3>Email</h3>
+                        <p>info@spotev.com</p>
+                        <p class="text-muted">We'll respond within 24 hours</p>
+                    </div>
+                </article>
+
+                <article class="contact-method">
+                    <i class="fas fa-map-marker-alt method-icon"></i>
+                    <div class="method-details">
+                        <h3>Head Office</h3>
+                        <p>Block 5, Bahria Town, Karachi</p>
+                        <p class="text-muted">Open for visits: 10:00 AM - 5:00 PM (By appointment)</p>
+                    </div>
+                </article>
+
+                <article class="contact-method">
+                    <i class="fas fa-comments method-icon"></i>
+                    <div class="method-details">
+                        <h3>Live Chat</h3>
+                        <p>Available on our website</p>
+                        <p class="text-muted">9:00 AM - 6:00 PM, Monday to Friday</p>
+                    </div>
+                </article>
+
+            </section>
+        </article>
+
+        <!-- Right Side: Contact Form -->
+        <aside class="contact-form-container">
+            <h2>Send Us a Message</h2>
+            <p>Fill in the form below and we'll get back to you as soon as possible.</p>
+
+            <form class="contact-form" id="contactForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number (Pakistan)</label>
+                    <input type="tel" id="phone" name="phone" class="form-control" 
+                           pattern="03[0-9]{9}" 
+                           placeholder="03XXXXXXXXX" maxlength="11"
+                           title="Please enter a valid Pakistan mobile number starting with '03'" required>
+                    <small class="form-text text-muted">Enter a valid Pakistan mobile number (e.g., 03XXXXXXXXX)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <select id="subject" name="subject" class="form-control" required>
+                        <option value="" selected disabled>Select a subject</option>
+                        <option value="general">General Inquiry</option>
+                        <option value="service">Service Information</option>
+                        <option value="feedback">Feedback</option>
+                        <option value="complaint">Complaint</option>
+                        <option value="partnership">Business Partnership</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" class="form-control" rows="5" required></textarea>
+                </div>
+
+               <div class="form-group">
+                 <div style="display: flex; align-items: center;">
+                   <input type="checkbox" id="consent" name="consent" class="form-check-input" required style="margin-right: 10px;">
+                   <label for="consent" class="form-check-label">
+                    I consent to Spot EV collecting and storing the information provided in this form.
+                   </label>
+                 </div>
+               </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-paper-plane"></i> Send Message
+                </button>
+            </form>
+
+            <section class="form-success hidden" id="formSuccess">
+                <i class="fas fa-check-circle success-icon"></i>
+                <h3>Thank You!</h3>
+                <p>Your message has been sent successfully. We'll get back to you shortly.</p>
+                <button class="btn btn-primary" id="sendAnother">Send Another Message</button>
+            </section>
+        </aside>
+    </div>
+</section>
+
+<!-- Firebase SDK Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyC_pIQFmNqoCqP1hh2EZynYL58VuLQfJWA",
+    authDomain: "ev-app-9d9ad.firebaseapp.com",
+    databaseURL: "https://ev-app-9d9ad-default-rtdb.firebaseio.com",
+    projectId: "ev-app-9d9ad",
+    storageBucket: "ev-app-9d9ad.appspot.com",
+    messagingSenderId: "121460657765",
+    appId: "1:121460657765:web:6953e8791f944c4f0c408c"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const contactForm = document.getElementById("contactForm");
+  const formSuccess = document.getElementById("formSuccess");
+  const sendAnother = document.getElementById("sendAnother");
+
+  function validatePakistanPhone(phone) {
+    const phoneRegex = /^03\d{9}$/;
+    return phoneRegex.test(phone);
+  }
+
+  function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  const profanityList = [
+    'fuck', 'shit', 'ass', 'bitch', 'bastard', 'damn', 'cunt', 'dick', 'pussy', 'whore',
+  ];
+
+  function containsProfanity(text) {
+    const words = text.toLowerCase().split(/\s+/);
+    return words.some(word => profanityList.includes(word));
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('phone');
+    const emailInput = document.getElementById('email');
+    const messageInput = document.getElementById('message');
+
+    phoneInput.addEventListener('input', function() {
+      const isValid = validatePakistanPhone(this.value);
+      this.setCustomValidity(isValid ? '' : 'Please enter a valid Pakistan mobile number (03XXXXXXXXX)');
+      this.reportValidity();
+    });
+
+    emailInput.addEventListener('input', function() {
+      const isValid = validateEmail(this.value);
+      this.setCustomValidity(isValid ? '' : 'Please enter a valid email address');
+      this.reportValidity();
+    });
+
+    messageInput.addEventListener('input', function() {
+      if (containsProfanity(this.value)) {
+        this.setCustomValidity('Please be mindful of your language. Avoid using inappropriate words.');
+        this.reportValidity();
+      } else {
+        this.setCustomValidity('');
+      }
+    });
+    
+    contactForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const name = contactForm.name.value;
+      const email = contactForm.email.value;
+      const phone = contactForm.phone.value;
+      const subject = contactForm.subject.value;
+      const message = contactForm.message.value;
+
+      // Validate inputs
+      if (!validateEmail(email)) {
+        alert("Please enter a valid email address");
+        return;
+      }
+
+      if (phone && !validatePakistanPhone(phone)) {
+        alert("Please enter a valid Pakistani phone number (03XXXXXXXXX)");
+        return;
+      }
+
+      if (containsProfanity(message)) {
+        alert("Please keep your message professional and respectful");
+        return;
+      }
+
+      const newMessageRef = db.ref("contactMessages").push();
+      newMessageRef.set({
+        name,
+        email,
+        phone,
+        subject,
+        message,
+        timestamp: new Date().toISOString()
+      })
+        .then(() => {
+        contactForm.classList.add("hidden");
+        formSuccess.classList.remove("hidden");
+        })
+        .catch((error) => {
+          alert("Error sending message: " + error.message);
+        });
+    });
+    
+    sendAnother.addEventListener('click', function() {
+      contactForm.reset();
+      contactForm.style.display = 'grid';
+      formSuccess.classList.add('hidden');
+    });
+  });
+</script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form submission handling
+            const contactForm = document.getElementById('contactForm');
+            const formSuccess = document.getElementById('formSuccess');
+            const sendAnother = document.getElementById('sendAnother');
+            
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                // Normally would submit to server here
+                
+                // Show success message
+                contactForm.style.display = 'none';
+                formSuccess.classList.remove('hidden');
+            });
+            
+            sendAnother.addEventListener('click', function() {
+                contactForm.reset();
+                contactForm.style.display = 'grid';
+                formSuccess.classList.add('hidden');
+            });
+            
+            // FAQ toggle functionality
+            const faqItems = document.querySelectorAll('.faq-item');
+            
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                
+                question.addEventListener('click', function() {
+                    // Close all other items
+                    faqItems.forEach(otherItem => {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('active');
+                        }
+                    });
+                    
+                    // Toggle current item
+                    item.classList.toggle('active');
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": "auth != null",
+    "drivers": {
+      ".read": true,
+      ".write": "auth != null",
+      "$driver_id": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "buses": {
+      ".read": true,
+      ".write": "auth != null",
+      "$bus_id": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "routes": {
+      ".read": true,
+      ".write": "auth != null",
+      "$route_id": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "stops": {
+      ".read": true,
+      ".write": "auth != null",
+      "$stop_id": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "announcements": {
+      ".read": true,
+      ".write": "auth != null",
+      "$announcement_id": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "contactMessages": {
+      ".read": "auth != null",
+      ".write": true,
+      "$message_id": {
+        ".read": "auth != null",
+        ".write": true
+      }
+    },
+    "users": {
+      ".read": true,
+      ".write": "auth != null",
+      "$user_id": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    }
+  }
+} 

@@ -1,0 +1,263 @@
+{% extends 'layout.html' %}
+
+{% block title %}Spot EV - Electric Bus Transport Service{% endblock %}
+
+{% block content %}
+<head>
+    <link rel="stylesheet" href="/static/css/ticker.css">
+    
+</head>
+<div class="news-ticker">
+    <div class="ticker-container">
+        <div class="ticker-label">
+            <i class="fas fa-bullhorn"></i> Updates
+        </div>
+        <div class="ticker-content">
+            <div class="ticker-items" id="ticker-content">
+                <!-- Tickers will be inserted here as <span class="ticker-item">...</span> -->
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Eco-Friendly Transport Between Bahria Town and Karachi</h1>
+                <p class="hero-text">Experience a clean, comfortable, and efficient bus service powered by 100% electric vehicles. Track your bus in real-time and plan your journey with ease.</p>
+                <div class="hero-cta">
+                    <a href="{{ url_for('track') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-location-arrow"></i> Track My Bus
+                    </a>
+                    <a href="{{ url_for('ev_routes') }}" class="btn btn-outline btn-lg">
+                        <i class="fas fa-route"></i> Explore Routes
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose Spot EV</h2>
+                <p class="section-subtitle">Enjoy the benefits of our sustainable, reliable, and convenient electric bus service between Bahria Town Karachi and the city center.</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <h3 class="feature-title">Eco-Friendly</h3>
+                    <p class="feature-desc">Our all-electric fleet produces zero emissions, reducing carbon footprint and contributing to cleaner air in Karachi.</p>
+                    <a href="#" class="btn btn-outline">Learn More</a>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Real-Time Tracking</h3>
+                    <p class="feature-desc">Know exactly where your bus is with our live tracking system. Plan your journey with accurate arrival times.</p>
+                    <a href="{{ url_for('track') }}" class="btn btn-outline">Track Now</a>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-couch"></i>
+                    </div>
+                    <h3 class="feature-title">Premium Comfort</h3>
+                    <p class="feature-desc">Enjoy air conditioning and comfortable seating throughout your journey.</p>
+                    <a href="#" class="btn btn-outline">Learn More</a>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="feature-title">Frequent Service</h3>
+                    <p class="feature-desc">Buses running every 30 minutes during peak hours ensure you never have to wait long for your ride.</p>
+                    <a href="{{ url_for('ev_routes') }}" class="btn btn-outline">View Routes</a>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <h3 class="feature-title">Multiple Routes</h3>
+                    <p class="feature-desc">Choose between two different routes to find the option that best suits your needs and destination.</p>
+                    <a href="{{ url_for('ev_routes') }}" class="btn btn-outline">View Routes</a>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-wheelchair"></i>
+                    </div>
+                    <h3 class="feature-title">Accessibility</h3>
+                    <p class="feature-desc">Our buses are equipped with accessibility features to ensure comfortable travel for all passengers.</p>
+                    <a href="#" class="btn btn-outline">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Routes Section -->
+    <section class="routes" id="routes">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our EV Bus Routes</h2>
+                <p class="section-subtitle">Choose from our two specialized routes between Bahria Town Karachi and the city center, each designed to meet different travel needs.</p>
+            </div>
+            
+            <div class="routes-grid">
+                <div class="route-card">
+                    <div class="route-image">
+                        <img src="{{ url_for('static', filename='css/images/EV2.jpg') }}"
+                            alt="EV2 Express Bus" class="bus-image">
+                         <div class="route-badge">EV2 Route</div>
+                    </div>
+
+                    
+                    <div class="route-body">
+                        <h3 class="route-title">EV2 Route</h3>
+                        <h2 class="route-desc">Bahria Town Karachi &#8644 Malir Halt</h2>
+                        
+                        <div class="route-details">
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-label">Journey Time</div>
+                                    <div class="detail-value">45 minutes</div>
+                                </div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-sync-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-label">Frequency</div>
+                                    <div class="detail-value">Every 30 min</div>
+                                </div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-label">Fare</div>
+                                    <div class="detail-value">Rs. 120</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="route-actions">
+                            <a href="{{ url_for('ev_routes') }}#ev2" class="btn btn-primary">View Details</a>
+                            <a href="{{ url_for('track') }}" class="btn btn-outline">Track EV2</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="route-card">
+                    <div class="route-image">
+                        <img src="{{ url_for('static', filename='css/images/EV4.jpg') }}"
+                             alt="EV2 Express Bus" class="bus-image">
+                         <div class="route-badge">EV4 Route</div>
+                    </div>
+                    
+                    <div class="route-body">
+                        <h3 class="route-title">EV4 Route</h3>
+                        <h2 class="route-desc">Bahria Town Karachi &#8644 Ayesha Manzil</h2>
+
+                        <div class="route-details">
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-label">Journey Time</div>
+                                    <div class="detail-value">45 minutes</div>
+                                </div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-sync-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-label">Frequency</div>
+                                    <div class="detail-value">Every 30 min</div>
+                                </div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-label">Fare</div>
+                                    <div class="detail-value">Rs. 120</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="route-actions">
+                            <a href="{{ url_for('ev_routes') }}#ev4" class="btn btn-primary">View Details</a>
+                            <a href="{{ url_for('track') }}" class="btn btn-outline">Track EV4</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+<!-- Firebase SDK Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+    // Initialize Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyC_pIQFmNqoCqP1hh2EZynYL58VuLQfJWA",
+        authDomain: "ev-app-9d9ad.firebaseapp.com",
+        databaseURL: "https://ev-app-9d9ad-default-rtdb.firebaseio.com",
+        projectId: "ev-app-9d9ad",
+        storageBucket: "ev-app-9d9ad.appspot.com",
+        messagingSenderId: "121460657765",
+        appId: "1:121460657765:web:6953e8791f944c4f0c408c"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Function to load and display announcements
+    function loadAnnouncements() {
+        const tickerContent = document.getElementById('ticker-content');
+        
+        db.ref('announcements').orderByChild('timestamp').limitToLast(5).on('value', (snapshot) => {
+            const announcements = [];
+            snapshot.forEach((childSnapshot) => {
+                announcements.unshift(childSnapshot.val());
+            });
+            
+            if (announcements.length > 0) {
+                const messages = announcements.map(ann => `<span class="ticker-item">${ann.message}</span>`).join('');
+                tickerContent.innerHTML = messages; // Removed duplication
+            } else {
+                tickerContent.innerHTML = '<span class="ticker-item">Welcome to Spot EV - Your eco-friendly transport solution</span>';
+            }
+        });
+    }
+
+    // Load announcements when page loads
+    document.addEventListener('DOMContentLoaded', loadAnnouncements);
+</script>
+{% endblock %}

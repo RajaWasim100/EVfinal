@@ -1,0 +1,1236 @@
+{% extends 'layout.html' %}
+
+{% block title %}Admin Portal - Spot EV{% endblock %}
+
+{% block content %}
+<head>
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<div class="admin-container">
+    <nav class="admin-nav">
+        <div class="logo-container">
+            <h2 class="brand-text"><i class="fa-solid fa-bus"></i> Spot EV<br><p class="brand-subtitle">Admin Portal</p></h2> 
+            
+        </div>
+        <ul class="nav-items">
+                <li class="nav-item" onclick="showSection('contact')">
+                    <i class="fas fa-envelope"></i>
+                    <span>Contact Submissions</span>
+                </li>
+                <li class="nav-item" onclick="showSection('addDriver')">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Add Driver</span>
+                </li>
+                <li class="nav-item" onclick="showSection('manageBuses')">
+                    <i class="fas fa-bus"></i>
+                    <span>Manage Buses</span>
+                </li>
+                <li class="nav-item" onclick="showSection('postAnnouncement')">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Post Announcement</span>
+                </li>
+                <li class="nav-item" onclick="showSection('listDrivers')">
+                    <i class="fas fa-users"></i>
+                    <span>List of Drivers</span>
+                </li>
+                <li class="nav-item" onclick="showSection('resetPasswordSection')">
+                    <i class="fas fa-key"></i>
+                    <span>Reset Password</span>
+                </li>
+
+
+            </ul>
+            <div class="logout-button">
+          <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">Logout</a>
+        </div>
+        </nav>
+
+    <main class="main-content">
+      <!-- Contact Form Submissions -->
+      <section id="contact" class="section">
+        <div class="section-header">
+          <h3><i class="fas fa-envelope"></i> Contact Form Submissions</h3>
+          <div class="contact-filters">
+            <select id="subject-filter" class="admin-select">
+              <option value="all">All Subjects</option>
+              <option value="general">General Inquiry</option>
+              <option value="service">Service Information</option>
+              <option value="feedback">Feedback</option>
+              <option value="complaint">Complaint</option>
+              <option value="partnership">Business Partnership</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadMessages()">
+              <i class="fas fa-sync-alt"></i> Refresh Messages
+            </button>
+          </div>
+        </div>
+        <div id="contact-messages" class="messages-container">
+          <!-- Messages will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Add Driver Form -->
+      <section id="addDriver" class="section" style="display:none;">
+        <div class="admin-section">
+          <h3 class="section-title">Add Driver</h3>
+          <div class="admin-form">
+            <input id="name" class="admin-input" placeholder="Name" required>
+            <input id="age" class="admin-input" placeholder="Age" type="number" required>
+            <input id="cnic" class="admin-input" placeholder="CNIC (XXXXX-XXXXXX-X)" 
+                   pattern="[0-9]{5}-[0-9]{7}-[0-9]" 
+                   maxlength="15"
+                   required>
+            <input id="phone" class="admin-input" placeholder="Enter Pakistan number (03XXXXXXXXX)" 
+                   pattern="03[0-9]{9}"
+                   maxlength="11"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)"
+                   title="Please enter a valid Pakistan phone number starting with 03">
+            <!-- <input id="experience" class="admin-input" type="number" placeholder="Experience (e.g., 5 years)"> -->
+            <input id="experience" class="admin-input" type="number" placeholder="Experience (e.g., 5 years)" 
+                   maxlength="2" oninput="if (this.value.length > 2) this.value = this.value.slice(0,2);">
+
+            <select id="route" class="admin-select">
+              <option value="">Select Route</option>
+              <option value="EV-2">EV-2</option>
+              <option value="EV-4">EV-4</option>
+            </select>
+            <select id="bus_id" class="admin-select">
+              <option value="">Select Bus</option>
+              <!-- Bus options will be populated dynamically -->
+            </select>
+            <button class="btn btn-primary" onclick="addDriver()">Add Driver</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Post Announcement -->
+      <section id="postAnnouncement" class="section" style="display:none;">
+         <div class="admin-section">
+    <h3 class="section-title">Post Announcement</h3>
+    <div class="admin-form">
+                <div class="form-group full-width">
+                  <textarea id="announcementMessage" class="admin-input" 
+                placeholder="Enter announcement message (e.g., 'EV-2 route experiencing 15-minute delays due to traffic')" 
+                rows="3"></textarea>
+                </div>
+                <div class="form-group">
+      <button class="btn btn-primary" onclick="postAnnouncement()">
+        <i class="fas fa-bullhorn"></i> Post Announcement
+      </button>
+
+      <!-- New button for driver announcement -->
+      <button class="btn btn-secondary" onclick="postDriverAnnouncement()">
+        <i class="fas fa-user-tie"></i> Post Driver Announcement
+      </button>
+        </div>
+    </div>
+    <div id="announcements-list" class="announcements-list">
+      <!-- Previous announcements will be loaded here -->
+    </div>
+  </div>
+      </section>
+
+      <!-- List of Drivers -->
+      <section id="listDrivers" class="section" style="display:none;">
+  <div class="admin-section">
+    <h3 class="section-title">List of Drivers</h3>
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Age</th>
+            <th>CNIC</th>
+            <th>Phone</th>
+            <th>Route</th>
+            <th>Bus</th>
+            <th>Experience</th>
+            <th>Account Status</th>
+            <th>Driver Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="driver-list">
+          <!-- Driver list will be populated here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+      </section>
+
+      <!-- Manage Driver Activation -->
+<section id="manageDrivers" class="section" style="display:none;">
+  <div class="admin-section">
+    <h3 class="section-title">Activate / Deactivate Driver</h3>
+    <div class="admin-form">
+                <div class="form-group">
+      <input id="driverIdentifier" class="admin-input" type="text" placeholder="Enter CNIC" 
+       maxlength="13" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                </div>
+                <div class="form-group">
+      <select id="activationStatus" class="admin-select">
+        <option value="active">Activate</option>
+        <option value="inactive">Deactivate</option>
+      </select>
+                </div>
+                <div class="form-group">
+      <button class="btn btn-primary" onclick="updateDriverStatus()">Update Status</button>
+                </div>
+    </div>
+  </div>
+</section>
+
+<!-- PASSWORD RESET SECTION -->
+
+<section id="resetPasswordSection" class="section" style="display: none;">
+  <div class="admin-section">
+    <h3 class="section-title">Reset Driver Password</h3>
+    <div class="form-group">
+      <label for="driverSelect">Select Driver</label>
+      <select class="form-control" id="driverSelect">
+        <option disabled selected>Select a driver</option>
+    
+      </select>
+    </div>
+    <button class="btn-danger" onclick="resetDriverPassword()">Reset Password</button>
+    <div id="resetPasswordResult" class="mt-3 text-info"></div>
+  </div>
+</section>
+
+      <!-- Manage Buses Section -->
+      <section id="manageBuses" class="section" style="display:none;">
+        <div class="admin-section">
+          <h3 class="section-title">Manage Buses</h3>
+          
+          <!-- Add Bus Form -->
+          <div class="admin-form-container">
+            <h3>Add New Bus</h3>
+            <div class="admin-form">
+              <input id="busNumber" class="admin-input" placeholder="Bus Number (e.g., EV2-101)" required>
+              <select id="busRoute" class="admin-select" required>
+                <option value="">Select Route</option>
+                <option value="EV-2">EV-2</option>
+                <option value="EV-4">EV-4</option>
+              </select>
+              <input id="busCapacity" class="admin-input" type="number" placeholder="Bus Capacity" required oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);">
+              <button class="btn btn-primary" onclick="addBus()">
+                <i class="fas fa-plus"></i> Add Bus
+              </button>
+            </div>
+          </div>
+
+          <!-- Bus List -->
+          <div class="table-container">
+            <h3>Current Buses</h3>
+            <table id="bus-table" class="admin-table">
+              <thead>
+                <tr>
+                  <th>Bus Number</th>
+                  <th>Route</th>
+                  <th>Capacity</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="bus-list">
+                <!-- Bus data will be inserted here dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<div id="driver-credentials-alert" style="display:none; position:fixed; top:30px; right:30px; z-index:9999;"></div>
+
+<style>
+  .driver-credentials-box {
+    background: #fff;
+    border: 1px solid #09a68c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 1.2rem 2rem 1.2rem 1.2rem;
+    min-width: 280px;
+    max-width: 350px;
+    color: #222;
+    font-size: 1rem;
+    position: relative;
+    margin-bottom: 1rem;
+    animation: fadeIn 0.3s;
+  }
+  .driver-credentials-box strong { color: #09a68c; }
+  .driver-credentials-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #888;
+    cursor: pointer;
+  }
+  @keyframes fadeIn { from { opacity: 0; right: 0; } to { opacity: 1; right: 30px; } }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Firebase SDK Scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+<script>
+  // Initialize Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyC_pIQFmNqoCqP1hh2EZynYL58VuLQfJWA",
+    authDomain: "ev-app-9d9ad.firebaseapp.com",
+    databaseURL: "https://ev-app-9d9ad-default-rtdb.firebaseio.com",
+    projectId: "ev-app-9d9ad",
+    storageBucket: "ev-app-9d9ad.appspot.com",
+    messagingSenderId: "121460657765",
+    appId: "1:121460657765:web:6953e8791f944c4f0c408c"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const auth = firebase.auth();
+
+  // Function to initialize admin panel
+  async function initializeAdminPanel() {
+    try {
+      // Get admin token
+      const response = await fetch('/get_admin_token');
+      const data = await response.json();
+      
+      if (!data.token) {
+        throw new Error('No token received');
+      }
+
+      // Sign in with custom token
+      await auth.signInWithCustomToken(data.token);
+      console.log('Admin authentication successful');
+
+      // Initialize data after successful authentication
+      await initializeBuses(); // Initialize buses if needed
+      loadMessages();
+      loadDrivers();
+      loadBuses();
+      updateBusSelectOptions();
+
+    } catch (error) {
+      console.error('Admin initialization failed:', error);
+      alert('Failed to initialize admin panel. Please refresh the page.');
+    }
+  }
+
+  // Call initialization when DOM is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeAdminPanel();
+    showSection('contact');
+  });
+
+  // Function to format timestamp
+  function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const options = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return date.toLocaleDateString('en-US', options);
+  }
+
+  // Function to load contact messages
+  function loadMessages() {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    const messagesDiv = document.getElementById('contact-messages');
+    const subjectFilter = document.getElementById('subject-filter').value;
+    
+    db.ref('contactMessages').on('value', (snapshot) => {
+        messagesDiv.innerHTML = ''; // Clear existing messages
+        
+        const messages = [];
+        snapshot.forEach((childSnapshot) => {
+            const message = childSnapshot.val();
+            message.id = childSnapshot.key;
+            messages.push(message);
+        });
+
+        // Sort messages by timestamp (newest first)
+        messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        messages.forEach((message) => {
+            if (subjectFilter === 'all' || message.subject === subjectFilter) {
+                const messageCard = document.createElement('div');
+                messageCard.className = 'message-card';
+                messageCard.innerHTML = `
+                    <div class="message-header">
+              <span class="message-subject">${message.subject.charAt(0).toUpperCase() + message.subject.slice(1)}</span>
+                        <span class="message-timestamp">${formatTimestamp(message.timestamp)}</span>
+                    </div>
+            <div>
+              <strong>From:</strong> ${message.name} (${message.email})
+              ${message.phone ? `<br><strong>Phone:</strong> ${message.phone}` : ''}
+                    </div>
+            <div class="message-content">${message.message}</div>
+            <button onclick="deleteMessage('${message.id}')" style="background-color: #dc2626;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;">Delete</button>
+                `;
+                messagesDiv.appendChild(messageCard);
+            }
+        });
+
+        if (messagesDiv.children.length === 0) {
+        messagesDiv.innerHTML = '<p>No messages found.</p>';
+        }
+    });
+  }
+
+  // Function to delete a message
+  function deleteMessage(messageId) {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this message?')) {
+      db.ref('contactMessages').child(messageId).remove()
+        .then(() => {
+          alert('Message deleted successfully');
+        })
+        .catch((error) => {
+          alert('Error deleting message: ' + error.message);
+        });
+    }
+  }
+
+  function validateCNIC(cnic) {
+    // Remove hyphens and spaces for validation
+    const cleanCnic = cnic.replace(/[-\s]/g, '');
+    return /^\d{13}$/.test(cleanCnic);
+  }
+
+  // Add CNIC formatting function
+  function formatCNIC(input) {
+    let value = input.value.replace(/\D/g, ''); // Remove non-digits
+    
+    if (value.length > 0) {
+        if (value.length <= 5) {
+            value = value;
+        } else if (value.length <= 12) {
+            value = value.slice(0, 5) + '-' + value.slice(5);
+        } else {
+            value = value.slice(0, 5) + '-' + value.slice(5, 12) + '-' + value.slice(12, 13);
+        }
+    }
+    
+    input.value = value;
+  }
+
+  // Add event listener for CNIC input
+  document.getElementById('cnic').addEventListener('input', function(e) {
+    formatCNIC(e.target);
+  });
+
+  // Add event listener for CNIC paste
+  document.getElementById('cnic').addEventListener('paste', function(e) {
+    e.preventDefault();
+    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+    const numericOnly = pastedText.replace(/[^0-9]/g, '').slice(0, 13);
+    this.value = numericOnly;
+    formatCNIC(this);
+  });
+
+  // Function to initialize existing buses
+  async function initializeBuses() {
+    const existingBuses = {
+        'EV-2': [
+            { number: 'EV2-101', capacity: 30 },
+            { number: 'EV2-102', capacity: 30 },
+            { number: 'EV2-103', capacity: 30 }
+        ],
+        'EV-4': [
+            { number: 'EV4-201', capacity: 30 },
+            { number: 'EV4-202', capacity: 30 }
+        ]
+    };
+
+    try {
+        const busesRef = db.ref('buses');
+        const snapshot = await busesRef.once('value');
+        const existingData = snapshot.val();
+
+        // Only initialize if no buses exist
+        if (!existingData) {
+            for (const [route, buses] of Object.entries(existingBuses)) {
+                for (const bus of buses) {
+                    await busesRef.push({
+                        busNumber: bus.number,
+                        route: route,
+                        capacity: bus.capacity,
+                        status: 'inactive',
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            }
+            console.log('Initial buses added to database');
+        }
+    } catch (error) {
+        console.error('Error initializing buses:', error);
+    }
+  }
+
+  // Function to toggle driver account status
+  async function toggleDriverStatus(driverId, currentStatus) {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+    
+    try {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      await db.ref(`drivers/${driverId}`).update({ status: newStatus });
+      alert(`Driver account status updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating driver status:', error);
+      alert('Error updating driver status. Please try again.');
+    }
+  }
+
+  // Function to load drivers
+  function loadDrivers() {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    const driversRef = db.ref('drivers');
+    const busesRef = db.ref('buses');
+    
+    // First get all buses
+    busesRef.once('value').then((busesSnapshot) => {
+      const buses = busesSnapshot.val() || {};
+      
+      // Then get all drivers
+    driversRef.on('value', (snapshot) => {
+      const driverList = document.getElementById('driver-list');
+      driverList.innerHTML = ''; // Clear existing list
+      
+      const drivers = snapshot.val();
+      if (!drivers) {
+          driverList.innerHTML = '<tr><td colspan="11" class="text-center">No drivers found</td></tr>';
+        return;
+      }
+      
+      // Convert drivers object to array and add IDs
+      Object.entries(drivers).forEach(([driverId, driver]) => {
+        const row = document.createElement('tr');
+          const accountStatus = driver.status || 'inactive';
+          const driverStatus = driver.isLoggedIn ? (driver.isOnTrip ? 'On Trip' : 'Logged In') : 'Offline';
+          
+          // Find the bus number from the buses collection
+          let busNumber = '-';
+          Object.entries(buses).forEach(([busId, bus]) => {
+            if (busId === driver.bus_id) {
+              busNumber = bus.busNumber;
+            }
+          });
+          
+        row.innerHTML = `
+          <td>${driver.name || '-'}</td>
+          <td>${driver.username || '-'}</td>
+          <td>${driver.age || '-'}</td>
+          <td>${driver.cnic || '-'}</td>
+          <td>${driver.phone || '-'}</td>
+          <td>${driver.route || '-'}</td>
+            <td>${busNumber}</td>
+          <td>${driver.experience || '-'}</td>
+            <td>
+              <button class="btn btn-sm ${accountStatus === 'active' ? 'btn-success' : 'btn-danger'}" 
+                      onclick="toggleDriverStatus('${driverId}', '${accountStatus}')">
+                ${accountStatus}
+              </button>
+            </td>
+            <td><span class="status-badge status-${driverStatus.toLowerCase().replace(' ', '-')}">${driverStatus}</span></td>
+          <td>
+            <button class="btn btn-danger" onclick="removeDriver('${driverId}')">Remove</button>
+          </td>
+        `;
+        driverList.appendChild(row);
+      });
+      });
+    }).catch(error => {
+      console.error('Error loading buses:', error);
+    });
+  }
+
+  // Function to remove a driver
+  async function removeDriver(driverId) {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    if (confirm('Are you sure you want to remove this driver?')) {
+        try {
+        // Call backend to remove driver and update bus status
+        const response = await fetch('/remove_driver', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ driver_id: driverId })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+          // Reload drivers and bus select options
+          loadDrivers();
+          updateBusSelectOptions();
+          alert('Driver removed successfully');
+        } else {
+          alert(data.message || 'Error removing driver.');
+        }
+        } catch (error) {
+            console.error('Error removing driver:', error);
+            alert('Error removing driver. Please try again.');
+        }
+    }
+  }
+
+  // Function to update route selection to filter bus options
+  document.getElementById('route').addEventListener('change', function(e) {
+    const busSelect = document.getElementById('bus_id');
+    const selectedRoute = e.target.value;
+    
+    // Reset bus selection
+    busSelect.value = '';
+    
+    // Show/hide relevant bus options
+    Array.from(busSelect.getElementsByTagName('optgroup')).forEach(group => {
+      if (selectedRoute === '' || group.label.includes(selectedRoute)) {
+        group.style.display = '';
+      } else {
+        group.style.display = 'none';
+      }
+    });
+  });
+
+  // Add styles for the empty state
+  const style = document.createElement('style');
+  style.textContent = `
+    .text-center {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 99px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    .status-active {
+      background-color: #dcfce7;
+      color: #16a34a;
+    }
+    
+    .status-inactive {
+      background-color: #fee2e2;
+      color: #dc2626;
+    }
+    
+    .btn-danger {
+      background-color: #dc2626;
+      color: white;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: background-color 0.2s;
+      white-space: nowrap;
+      min-width: 120px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+    }
+    
+    .btn-danger:hover {
+      background-color: #b91c1c;
+    }
+  `;
+  document.head.appendChild(style);
+
+  function validatePakistanPhone(phone) {
+    const phoneRegex = /^03\d{9}$/;
+    return phoneRegex.test(phone);
+  }
+
+  function showSection(sectionId) {
+    // Hide all sections
+    const allSections = document.querySelectorAll('.section');
+    allSections.forEach(section => section.style.display = 'none');
+    
+    // Show the selected section
+    const target = document.getElementById(sectionId);
+    if (target) target.style.display = 'block';
+    
+    // Update active state in navigation
+    const allNavItems = document.querySelectorAll('.nav-item');
+    allNavItems.forEach(item => item.classList.remove('active'));
+    
+    // Find and activate the clicked nav item
+    const activeNavItem = Array.from(allNavItems).find(item => {
+        return item.getAttribute('onclick').includes(sectionId);
+    });
+    if (activeNavItem) activeNavItem.classList.add('active');
+
+    // Load announcements if the announcements section is shown
+    if (sectionId === 'postAnnouncement') {
+      loadAnnouncements();
+    }
+  }
+
+  // Function to load buses
+  function loadBuses() {
+    const busList = document.getElementById('bus-list');
+    
+    db.ref('buses').on('value', (snapshot) => {
+        busList.innerHTML = ''; // Clear existing list
+        
+        const buses = snapshot.val();
+        if (!buses) {
+            busList.innerHTML = '<tr><td colspan="5" class="text-center">No buses found</td></tr>';
+            return;
+        }
+        
+        Object.entries(buses).forEach(([busId, bus]) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${bus.busNumber}</td>
+                <td>${bus.route}</td>
+                <td>${bus.capacity}</td>
+                <td><span class="bus-status ${bus.status || 'inactive'}">${bus.status || 'Inactive'}</span></td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="removeBus('${busId}')">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </td>
+            `;
+            busList.appendChild(row);
+        });
+    });
+  }
+
+  // Function to add a new bus
+  async function addBus() {
+    const busNumber = document.getElementById('busNumber').value.trim();
+    const route = document.getElementById('busRoute').value;
+    const capacity = document.getElementById('busCapacity').value;
+
+    if (!busNumber || !route || !capacity) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    // Validate bus number format
+    const busNumberRegex = /^(EV[24]-\d{3})$/;
+    if (!busNumberRegex.test(busNumber)) {
+        alert('Please enter a valid bus number (e.g., EV2-101 or EV4-201)');
+        return;
+    }
+
+    try {
+        // Check if bus number already exists
+        const busesRef = db.ref('buses');
+        const snapshot = await busesRef.orderByChild('busNumber').equalTo(busNumber).once('value');
+        
+        if (snapshot.exists()) {
+            alert('A bus with this number already exists');
+            return;
+        }
+
+        // Add new bus
+        const newBus = {
+            busNumber: busNumber,
+            route: route,
+            capacity: parseInt(capacity),
+            status: 'inactive',
+            createdAt: new Date().toISOString()
+        };
+
+        await busesRef.push(newBus);
+
+        // Clear form
+        document.getElementById('busNumber').value = '';
+        document.getElementById('busRoute').value = '';
+        document.getElementById('busCapacity').value = '';
+
+        // Show success message
+        const notification = document.createElement('div');
+        notification.className = 'credential-alert';
+        notification.innerHTML = 'Bus added successfully';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+
+    } catch (error) {
+        console.error('Error adding bus:', error);
+        alert('Error adding bus. Please try again.');
+    }
+  }
+
+  // Function to remove a bus
+  async function removeBus(busId) {
+    if (confirm('Are you sure you want to remove this bus?')) {
+        try {
+            // Check if bus is assigned to any driver
+            const driversRef = db.ref('drivers');
+            const snapshot = await driversRef.orderByChild('bus_id').equalTo(busId).once('value');
+            
+            if (snapshot.exists()) {
+                alert('Cannot remove bus: It is currently assigned to a driver');
+                return;
+            }
+
+            // Remove bus
+            await db.ref(`buses/${busId}`).remove();
+
+            // Show success message
+            const notification = document.createElement('div');
+            notification.className = 'credential-alert';
+            notification.innerHTML = 'Bus removed successfully';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+
+        } catch (error) {
+            console.error('Error removing bus:', error);
+            alert('Error removing bus. Please try again.');
+        }
+    }
+  }
+
+  // Function to update bus select options in add driver form
+  function updateBusSelectOptions() {
+    const routeSelect = document.getElementById('route');
+    const busSelect = document.getElementById('bus_id');
+    const selectedRoute = routeSelect.value;
+    
+    // Clear existing options except the first one
+    busSelect.innerHTML = '<option value="">Select Bus</option>';
+    
+    if (!selectedRoute) {
+      return; // Don't proceed if no route is selected
+    }
+    
+    // Get buses from Firebase
+    db.ref('buses').once('value').then((snapshot) => {
+        const buses = snapshot.val();
+      if (!buses) {
+        console.log('No buses found in database');
+        return;
+      }
+        
+        // Filter and sort buses by route
+        const routeBuses = Object.entries(buses)
+        .filter(([_, bus]) => bus.route === selectedRoute && bus.status !== 'assigned')
+            .sort((a, b) => a[1].busNumber.localeCompare(b[1].busNumber));
+        
+      console.log('Available buses for route:', selectedRoute, routeBuses);
+      
+        // Add bus options
+        routeBuses.forEach(([busId, bus]) => {
+            const option = document.createElement('option');
+            option.value = busId;
+            option.textContent = bus.busNumber;
+            busSelect.appendChild(option);
+        });
+
+      if (routeBuses.length === 0) {
+        const option = document.createElement('option');
+        option.disabled = true;
+        option.textContent = 'No available buses for this route';
+        busSelect.appendChild(option);
+      }
+    }).catch(error => {
+      console.error('Error loading buses:', error);
+    });
+  }
+
+  // Add event listener for route selection
+  document.addEventListener('DOMContentLoaded', function() {
+    const routeSelect = document.getElementById('route');
+    if (routeSelect) {
+      routeSelect.addEventListener('change', updateBusSelectOptions);
+    }
+  });
+
+  // Function to add a driver
+  async function addDriver() {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    const name = document.getElementById('name').value.trim();
+    const age = document.getElementById('age').value;
+    const cnic = document.getElementById('cnic').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const experience = document.getElementById('experience').value;
+    const route = document.getElementById('route').value;
+    const busId = document.getElementById('bus_id').value;
+
+
+    
+
+
+    // Validate inputs
+    if (!name || !age || !cnic || !phone || !route || !busId) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+     if (isNaN(age) || age < 22) {
+      alert("Driver must be at least 22 years old.");
+      return;
+    }
+
+    if (!validateCNIC(cnic)) {
+      alert('Please enter a valid CNIC number');
+      return;
+    }
+
+    if (!validatePakistanPhone(phone)) {
+      alert('Please enter a valid Pakistan phone number');
+      return;
+    }
+
+    try {
+      // Call backend to add driver
+      const response = await fetch('/add_driver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+        name: name,
+          age: age,
+        cnic: cnic,
+        phone: phone,
+          experience: experience,
+        route: route,
+          bus_id: busId
+        })
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+      // Clear form
+      document.getElementById('name').value = '';
+      document.getElementById('age').value = '';
+      document.getElementById('cnic').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('experience').value = '';
+      document.getElementById('route').value = '';
+      document.getElementById('bus_id').value = '';
+
+        // Show credentials alert
+        showDriverCredentialsAlert(data.username, data.password);
+      } else {
+        alert(data.message || 'Error adding driver.');
+      }
+    } catch (error) {
+      console.error('Error adding driver:', error);
+      alert('Error adding driver. Please try again.');
+    }
+  }
+
+  // Show driver credentials alert at the side
+  function showDriverCredentialsAlert(username, password) {
+    const alertDiv = document.getElementById('driver-credentials-alert');
+    alertDiv.innerHTML = `
+      <div class="driver-credentials-box">
+        <button class="driver-credentials-close" onclick="document.getElementById('driver-credentials-alert').style.display='none'">&times;</button>
+        <div><strong>Driver Created!</strong></div>
+        <div style="margin-top:0.5rem;">Username: <strong>${username}</strong></div>
+        <div>Password: <strong>${password}</strong></div>
+        <div style="margin-top:0.5rem; font-size:0.95em; color:#666;">Share these credentials with the driver.</div>
+      </div>
+    `;
+    alertDiv.style.display = 'block';
+  }
+
+  function updateDriverStatus() {
+    const identifier = document.getElementById("driverIdentifier").value.trim();
+    const status = document.getElementById("activationStatus").value;
+
+    if (!identifier) {
+        alert("Please enter a CNIC. ");
+        return;
+    }
+
+    fetch("/update_driver_status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: identifier, status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("An error occurred while updating status.");
+    });
+  }
+
+  // Function to post announcement
+  async function postAnnouncement() {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    const message = document.getElementById('announcementMessage').value.trim();
+    if (!message) {
+      alert('Please enter an announcement message');
+      return;
+    }
+
+    try {
+      const response = await fetch('/post_announcement', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        alert('Announcement posted successfully');
+        document.getElementById('announcementMessage').value = '';
+        loadAnnouncements();
+      } else {
+        throw new Error(data.message || 'Failed to post announcement');
+      }
+    } catch (error) {
+      console.error('Error posting announcement:', error);
+      alert('Error posting announcement: ' + error.message);
+    }
+  }
+
+  // Function to post driver announcement
+  async function postDriverAnnouncement() {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    const message = document.getElementById('announcementMessage').value.trim();
+    if (!message) {
+      alert('Please enter an announcement message');
+      return;
+    }
+
+    try {
+      const response = await fetch('/post_announcement_driver', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        alert('Driver announcement posted successfully');
+        document.getElementById('announcementMessage').value = '';
+        loadAnnouncements();
+      } else {
+        throw new Error(data.message || 'Failed to post driver announcement');
+      }
+    } catch (error) {
+      console.error('Error posting driver announcement:', error);
+      alert('Error posting driver announcement: ' + error.message);
+    }
+  }
+  
+// raja
+  // Function to load announcements
+  function loadAnnouncements() {
+    const announcementsList = document.getElementById('announcements-list');
+    announcementsList.innerHTML = '';
+
+    // Load general announcements
+    db.ref('announcements').orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+      const announcements = [];
+      snapshot.forEach((childSnapshot) => {
+        announcements.unshift({
+          id: childSnapshot.key,
+          ...childSnapshot.val()
+        });
+      });
+
+      if (announcements.length > 0) {
+        const announcementsHTML = announcements.map(ann => `
+          <div class="announcement-item">
+            <div class="announcement-content">
+              <p>${ann.message}</p>
+              <span class="announcement-timestamp">${formatTimestamp(ann.timestamp)}</span>
+            </div>
+            <button class="announcement-delete" onclick="deleteAnnouncement('${ann.id}', 'General')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `).join('');
+        announcementsList.innerHTML += `
+          <h4>General Announcements</h4>
+          ${announcementsHTML}
+        `;
+      }
+    });
+
+    // Load driver announcements
+    db.ref('driver_announcements').orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+      const announcements = [];
+      snapshot.forEach((childSnapshot) => {
+        announcements.unshift({
+          id: childSnapshot.key,
+          ...childSnapshot.val()
+        });
+      });
+
+      if (announcements.length > 0) {
+        const announcementsHTML = announcements.map(ann => `
+          <div class="announcement-item">
+            <div class="announcement-content">
+              <p>${ann.message}</p>
+              <span class="announcement-timestamp">${formatTimestamp(ann.timestamp)}</span>
+            </div>
+            <button class="announcement-delete" onclick="deleteAnnouncement('${ann.id}', 'Driver')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `).join('');
+        announcementsList.innerHTML += `
+          <h4>Driver Announcements</h4>
+          ${announcementsHTML}
+        `;
+      }
+    });
+  }
+
+  // Function to delete announcement
+  async function deleteAnnouncement(announcementId, type) {
+    if (!auth.currentUser) {
+      console.error('Not authenticated');
+      return;
+    }
+
+    if (confirm('Are you sure you want to delete this announcement?')) {
+      try {
+        const response = await fetch('/delete_announcement', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            announcement_id: announcementId,
+            type: type
+          })
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+          alert('Announcement deleted successfully');
+          loadAnnouncements();
+        } else {
+          throw new Error(data.message || 'Failed to delete announcement');
+        }
+      } catch (error) {
+        console.error('Error deleting announcement:', error);
+        alert('Error deleting announcement: ' + error.message);
+      }
+    }
+  }
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAnnouncements();
+  });
+
+
+
+  // Load drivers on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const driverSelect = document.getElementById("driverSelect");
+    const driversRef = firebase.database().ref("drivers");
+
+    driversRef.once('value').then(snapshot => {
+      const drivers = snapshot.val();
+      for (const driverId in drivers) {
+        const driver = drivers[driverId];
+        const option = document.createElement("option");
+        option.value = driverId;  // This is the real ID used in reset
+        option.textContent = `${driver.name}`;  // Show name
+        driverSelect.appendChild(option);
+      }
+    });
+  });
+
+
+// password reset functionality 
+
+  async function resetDriverPassword() {
+    const driverId = document.getElementById("driverSelect").value;
+    const resultDiv = document.getElementById("resetPasswordResult");
+
+    if (!driverId) {
+      resultDiv.textContent = "Please select a driver.";
+      resultDiv.className = "text-danger";
+      return;
+    }
+
+    try {
+      const response = await fetch('/reset_driver_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driver_id: driverId })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        resultDiv.innerHTML = `✅ Password reset to <strong>${data.new_password}</strong>`;
+        resultDiv.className = "text-success";
+      } else {
+        resultDiv.textContent = "❌ " + (data.message || "Error resetting password.");
+        resultDiv.className = "text-danger";
+      }
+    } catch (error) {
+      resultDiv.textContent = "❌ Request failed: " + error.message;
+      resultDiv.className = "text-danger";
+    }
+  }
+
+
+
+</script>
+
+<script src="/static/js/admin.js"></script>
+{% endblock %}

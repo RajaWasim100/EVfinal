@@ -1,0 +1,327 @@
+
+        /* Routes Hero Section */
+        .routes-hero {
+            background-color: var(--primary-color);
+            padding: 3rem 0;
+            color: white;
+            text-align: center;
+        }
+        
+        .routes-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .routes-hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+        
+        /* Routes Overview Section */
+        .routes-overview {
+            padding: 4rem 0;
+            background-color: var(--bg-white);
+        }
+        
+        .routes-tabs {
+            margin-top: 2rem;
+        }
+        
+        .routes-tab-nav {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .route-tab {
+            padding: 1rem 2rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .route-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .route-tab-pane {
+            display: none;
+        }
+        
+        .route-tab-pane.active {
+            display: block;
+        }
+        
+        .route-map {
+            height: 350px;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .map-container {
+            width: 100%;
+            height: 100%;
+            background-color: #e9f1f9;
+        }
+        
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .route-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .route-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .route-title h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+        
+        .route-description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+        }
+        
+        .route-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .stat-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background-color: rgba(9, 166, 140, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--dark-color);
+        }
+        
+        .route-stops {
+            margin-bottom: 3rem;
+        }
+        
+        .route-stops h4, .route-schedule h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .stops-timeline {
+            padding-left: 1.5rem;
+            border-left: 2px solid var(--border-color);
+        }
+        
+        .stop-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+        
+        .stop-item:last-child {
+            padding-bottom: 0;
+        }
+        
+        .stop-item .fa-bus
+        {
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background-color: var(--bg-light);
+            border: 2px solid var(--border-color);
+            left: -1.6rem;
+            top: 0.25rem;
+            transform: translateX(-50%);
+        }
+        .stop-bullet {
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: 2px solid var(--border-color);
+            left: -1.5rem;
+            top: 0.25rem;
+            transform: translateX(-50%);
+
+        }
+        .stop-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--dark-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stop-details {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .schedule-group {
+            margin-bottom: 2rem;
+        }
+        
+        .schedule-heading {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .direction-badge {
+            padding: 0.4rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .direction-badge.outbound {
+            background-color: rgba(9, 166, 140, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .direction-badge.inbound {
+            background-color: rgba(102, 126, 234, 0.1);
+            color: #667EEA;
+        }
+        
+        .schedule-times {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        
+        .time-chip {
+            padding: 0.5rem 1rem;
+            background-color: var(--bg-light);
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        /* Service Notes Section */
+        .service-notes {
+            padding: 3rem 0 5rem;
+            background-color: var(--bg-light);
+        }
+        
+        .notes-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .notes-container h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .notes-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .notes-list li {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .notes-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .notes-list i {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            margin-top: 0.2rem;
+        }
+        
+        .notes-list span {
+            flex-grow: 1;
+            line-height: 1.6;
+        }
+        
+        /* Responsive styles */
+        @media (min-width: 768px) {
+            .route-map {
+                height: 450px;
+            }
+        }
+
+        /* Add to existing styles */
+        .schedule-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: var(--border-radius);
+            background-color: var(--bg-light);
+            transition: all 0.3s ease;
+        }
+
+        .schedule-item.completed {
+            opacity: 0.6;
+            background-color: #f3f4f6;
+        }
+
+        .schedule-item.current {
+            background-color: rgba(9, 166, 140, 0.1);
+            border-left: 4px solid var(--primary-color);
+            font-weight: 600;
+        }
+
+        .schedule-item.upcoming {
+            background-color: white;
+        }

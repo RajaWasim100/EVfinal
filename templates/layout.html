@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Spot EV - Electric Bus Transport Service{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if not is_admin_page %}
+    <!-- Header Section -->
+    <header class="header">
+        <div class="container">
+            <div class="header-wrapper">
+                <div class="logo">
+                    <a href="{{ url_for('index') }}">
+                        <i class="fa-solid fa-bus"></i>
+                        <span>Spot EV</span>
+                    </a>
+                </div>
+                
+                <nav class="nav-desktop">
+                    <ul>
+                        <li><a href="{{ url_for('index') }}" {% if request.path == '/' %}class="active"{% endif %}>Home</a></li>
+                        <li><a href="{{ url_for('track') }}" {% if request.path == '/track.html' %}class="active"{% endif %}>Track Bus</a></li>
+                        <li><a href="{{ url_for('ev_routes') }}" {% if request.path == '/ev-routes.html' %}class="active"{% endif %}>EV Routes</a></li>
+                        <li><a href="{{ url_for('contact') }}" {% if request.path == '/contact.html' %}class="active"{% endif %}>Contact Us</a></li>
+                    </ul>
+                </nav>
+                
+                <button class="mobile-menu-btn" aria-label="Toggle menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="header-right">
+                    <a href="{{ url_for('drivers_login') }}" class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <nav class="nav-mobile">
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('track') }}">Track Bus</a></li>
+                    <li><a href="{{ url_for('ev_routes') }}">EV Routes</a></li>
+                    <li><a href="{{ url_for('contact') }}">Contact Us</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <!-- Footer Section -->
+    {% if not is_admin_page %}
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-bus"></i>
+                    <h3>Spot EV</h3>
+                    <p>Sustainable transportation solutions for Karachi</p>
+                </div>
+                
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Quick Links</h4>
+                        <ul>
+                            <li><a href="{{ url_for('index') }}">Home</a></li>
+                            <li><a href="{{ url_for('track') }}">Track Bus</a></li>
+                            <li><a href="{{ url_for('ev_routes') }}">EV Routes</a></li>
+                            <li><a href="{{ url_for('contact') }}">Contact Us</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Routes</h4>
+                        <ul>
+                            <li><a href="{{ url_for('ev_routes') }}#ev2">EV-2</a></li>
+                            <li><a href="{{ url_for('ev_routes') }}#ev4">EV-4</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Support</h4>
+                        <ul>
+                            <li><a href="#">Help Center</a></li>
+                            <li><a href="#">FAQs</a></li>
+                            <li><a href="#">Terms of Service</a></li>
+                            <li><a href="#">Privacy Policy</a></li>
+                            <li><a href="{{ url_for('contact') }}">Contact Support</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="social-links">
+                    <a href="https://www.facebook.com/share/1E9go7xTpB/?mibextid=wwXIfr"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/bahriatownofficial/?hl=en"><i class="fab fa-instagram"></i></a>
+                    <a href="https://pk.linkedin.com/company/bahria-town-karachi"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <p class="copyright">© 2025 Spot EV. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+
+    <!-- Mobile Menu Toggle Script -->
+    <script>
+        document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
+            document.querySelector('.nav-mobile').classList.toggle('active');
+        });
+    </script>
+</body>
+</html>
