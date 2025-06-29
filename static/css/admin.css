@@ -69,14 +69,14 @@ body {
 
 .nav-items {
     display: flex;
-    gap: 0.9rem;
+    gap: 0.6rem;
     list-style: none;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: 0.3rem;
     padding: 0.7rem 1rem;
     border-radius: var(--border-radius-sm);
     cursor: pointer;
@@ -166,12 +166,13 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
+    padding: 10px;
 }
 
 .form-group {
     margin-bottom: 1rem;
 }
-
+ 
 
 .form-group.full-width {
     grid-column: 1 / -1;
@@ -269,7 +270,8 @@ body {
 }
 .table-container .table th{
     font-size: 13px;
-    padding: 10px 30px 20px 10px;
+    padding: 20px 30px 10px 30px;
+    text-align: center;
 }
 .table-container .table td{
   word-break: break-word;
@@ -650,7 +652,6 @@ body {
 .btn-danger {
     background-color: #dc2626;
     color: white;
-    padding: 0.4rem 2rem 0.4rem 2rem;
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: background-color 0.2s;
@@ -839,6 +840,7 @@ body {
   color: var(--text-color, #333);
   width: 100%;
   transition: border-color 0.2s;
+  margin-top: 10px;
 }
 
 #driverSelect:focus {
