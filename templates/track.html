@@ -193,80 +193,53 @@
     }
 
     function startTracking(routeId) {
-        // Clear existing tracking
-        stopTracking();
-        
-        // Start tracking drivers for this route
+        // Clear Firebase listeners
+        if (db.ref("users").off) {
+            db.ref("users").off();
+        }
+        // Track drivers for this route
         db.ref("users").on("value", (snapshot) => {
             const users = snapshot.val();
             console.log('Firebase users data:', users);
-            
-            // Clear old markers
-            for (let id in markers) {
-                markers[id].setMap(null);
-                delete markers[id];
-            }
 
-            if (!users) {
-                updateStatusNoDrivers(routeId);
-                return;
-            }
-
+            // Track which markers are still needed
+            const neededMarkers = {};
             let busCount = 0;
             const bounds = new google.maps.LatLngBounds();
 
             // Filter and process only active drivers on the selected route
-            Object.entries(users).forEach(([userId, userData]) => {
+            Object.entries(users || {}).forEach(([userId, userData]) => {
                 // Normalize route IDs for comparison
                 const userRouteId = normalizeRouteId(userData.routeId);
                 const selectedRouteId = normalizeRouteId(routeId);
 
                 if (userData.isActive && 
                     userRouteId === selectedRouteId && 
-                    userData.latitude && userData.longitude) {  // Check for latitude/longitude
-                    
+                    userData.latitude && userData.longitude) {
                     busCount++;
                     const position = new google.maps.LatLng(
                         parseFloat(userData.latitude),
                         parseFloat(userData.longitude)
                     );
-                    
-                    // Create or update marker
+                    neededMarkers[userId] = true;
                     if (!markers[userId]) {
                         markers[userId] = new google.maps.Marker({
                             position: position,
                             map: map,
                             title: `Bus ${userData.busId || userId}`,
                             icon: {
-                                url: "/static/css/images/bus-solid.png",  // <-- Place your icon in static folder
-                                scaledSize: new google.maps.Size(20, 20),  // Adjust size as needed
-                                anchor: new google.maps.Point(20, 20) // Center the icon
+                                url: "/static/css/images/bus-solid.png",
+                                scaledSize: new google.maps.Size(20, 20),
+                                anchor: new google.maps.Point(20, 20)
                             },
                             zIndex: 998
                         });
-
-                        // Add click listener for info window
-                    //     markers[userId].addListener('click', () => {
-                    //         const infoContent = `
-                    //             <div class="info-window">
-                    //                 <h3>Bus Information</h3>
-                    //                 <p><strong>Bus ID:</strong> ${userData.busId || 'N/A'}</p>
-                    //                 <p><strong>Speed:</strong> ${userData.speed || '0'} km/h</p>
-                    //                 <p><strong>Status:</strong> ${userData.status || 'Active'}</p>
-                    //                 <p><strong>Last Updated:</strong> ${new Date().toLocaleString()}</p>
-                    //             </div>
-                    //         `;
-                    //         infoWindow.setContent(infoContent);
-                    //         infoWindow.open(map, markers[userId]);
-                    //     });
-                    // } else {
-                    //     markers[userId].setPosition(position);
-                    // markers[userId].addListener('click', () => showBusInfo(userData, markers[userId]));
-
-                     }
-
-                     
-
+                        markers[userId].addListener('click', () => {
+                            showBusInfo(activeBuses[userId], markers[userId]);
+                        });
+                    } else {
+                        markers[userId].setPosition(position);
+                    }
                     // Store bus data for route calculation
                     activeBuses[userId] = {
                         position: position,
@@ -277,24 +250,25 @@
                         routeId: userData.routeId,
                         status: userData.status || 'Active',
                         timestamp: userData.timestamp || new Date().toISOString()
-
                     };
-
-                    markers[userId].addListener('click', () => {
-                        showBusInfo(activeBuses[userId], markers[userId]);
-                    });
-
                     bounds.extend(position);
-                    }
+                }
+            });
+
+            // Remove markers for buses that are no longer present
+            Object.keys(markers).forEach((userId) => {
+                if (!neededMarkers[userId]) {
+                    markers[userId].setMap(null);
+                    delete markers[userId];
+                    delete activeBuses[userId];
+                }
             });
 
             // Update active buses count and status
             const activeBusCount = document.getElementById('activeBusCount');
             const busStatusMessage = document.getElementById('busStatusMessage');
-            
             if (activeBusCount && busStatusMessage) {
                 activeBusCount.textContent = busCount;
-                
                 if (busCount > 0) {
                     busStatusMessage.textContent = `${busCount} bus${busCount > 1 ? 'es' : ''} currently active on this route`;
                     busStatusMessage.className = 'text-success';
@@ -303,16 +277,15 @@
                     busStatusMessage.className = 'text-warning';
                 }
             }
-
             // Update last updated time
             const lastUpdated = document.querySelector('#activeBusesSection .status-header p');
             if (lastUpdated) {
                 lastUpdated.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
             }
-            
-            // Fit map to show all buses
-            if (Object.keys(markers).length > 0) {
+            // Only fit bounds the first time or if user requests (not on every update)
+            if (!window._fitBoundsDone && Object.keys(markers).length > 0) {
                 map.fitBounds(bounds);
+                window._fitBoundsDone = true;
             }
         });
     }
