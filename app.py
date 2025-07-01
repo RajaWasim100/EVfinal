@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, db, auth
-from flask_compress import Compress
+
 
 # Set GOOGLE_APPLICATION_CREDENTIALS if hosted
 if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
@@ -42,7 +42,7 @@ except Exception as e:
     raise
 
 app = Flask(__name__)
-Compress(app)  # Enable gzip compression
+
 app.secret_key = os.environ.get("SESSION_SECRET", "spot-ev-secret-key")
 
 # List of admin emails
