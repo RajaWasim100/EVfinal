@@ -6,7 +6,6 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, db, auth
 
-
 # Set GOOGLE_APPLICATION_CREDENTIALS if hosted
 if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
@@ -42,7 +41,6 @@ except Exception as e:
     raise
 
 app = Flask(__name__)
-
 app.secret_key = os.environ.get("SESSION_SECRET", "spot-ev-secret-key")
 
 # List of admin emails
@@ -233,6 +231,9 @@ def drivers_login():
                     session['bus_id'] = driver.get('bus_id')
                     session['driver_id'] = driver_id
 
+                    # Set isLoggedIn to true in Firebase
+                    db.reference(f'drivers/{driver_id}').update({'isLoggedIn': True})
+
                     return jsonify({
                         'status': 'success',
                         'message': 'Login successful'
@@ -316,6 +317,10 @@ def start_trip():
         return jsonify({'status': 'error', 'message': 'Not logged in'})
     
     session['trip_started'] = True
+    # Set isOnTrip to true in Firebase
+    driver_id = session.get('driver_id')
+    if driver_id:
+        db.reference(f'drivers/{driver_id}').update({'isOnTrip': True})
     return jsonify({'status': 'started'})
 
 @app.route('/end_trip', methods=['POST'])
@@ -327,6 +332,8 @@ def end_trip():
     if driver_id:
         # Remove driver's location data when trip ends
         db.reference(f'users/{driver_id}').delete()
+        # Set isOnTrip to false in Firebase
+        db.reference(f'drivers/{driver_id}').update({'isOnTrip': False})
     
     session['trip_started'] = False
     return jsonify({'status': 'ended'})
@@ -337,6 +344,8 @@ def logout():
     if driver_id:
         # Remove driver's location data on logout
         db.reference(f'users/{driver_id}').delete()
+        # Set isLoggedIn and isOnTrip to false
+        db.reference(f'drivers/{driver_id}').update({'isLoggedIn': False, 'isOnTrip': False})
     
     session.clear()
     return redirect(url_for('drivers_login'))
