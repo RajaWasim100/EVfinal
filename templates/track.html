@@ -200,15 +200,17 @@
         db.ref("users").on("value", (snapshot) => {
             const users = snapshot.val();
             console.log('Firebase users data:', users);
-            
-            // Clear old markers
-            for (let id in markers) {
-                markers[id].setMap(null);
-                delete markers[id];
-            }
+
+            // Track which markers should remain
+            const activeMarkerIds = new Set();
 
             if (!users) {
                 updateStatusNoDrivers(routeId);
+                // Remove all markers if no users
+                for (let id in markers) {
+                    markers[id].setMap(null);
+                    delete markers[id];
+                }
                 return;
             }
 
@@ -224,14 +226,14 @@
                 if (userData.isActive && 
                     userRouteId === selectedRouteId && 
                     userData.latitude && userData.longitude) {  // Check for latitude/longitude
-                    
                     busCount++;
                     const position = new google.maps.LatLng(
                         parseFloat(userData.latitude),
                         parseFloat(userData.longitude)
                     );
-                    
-                    // Create or update marker
+                    activeMarkerIds.add(userId);
+
+                    // Create marker if it doesn't exist
                     if (!markers[userId]) {
                         markers[userId] = new google.maps.Marker({
                             position: position,
@@ -244,28 +246,13 @@
                             },
                             zIndex: 998
                         });
-
-                        // Add click listener for info window
-                    //     markers[userId].addListener('click', () => {
-                    //         const infoContent = `
-                    //             <div class="info-window">
-                    //                 <h3>Bus Information</h3>
-                    //                 <p><strong>Bus ID:</strong> ${userData.busId || 'N/A'}</p>
-                    //                 <p><strong>Speed:</strong> ${userData.speed || '0'} km/h</p>
-                    //                 <p><strong>Status:</strong> ${userData.status || 'Active'}</p>
-                    //                 <p><strong>Last Updated:</strong> ${new Date().toLocaleString()}</p>
-                    //             </div>
-                    //         `;
-                    //         infoWindow.setContent(infoContent);
-                    //         infoWindow.open(map, markers[userId]);
-                    //     });
-                    // } else {
-                    //     markers[userId].setPosition(position);
-                    // markers[userId].addListener('click', () => showBusInfo(userData, markers[userId]));
-
-                     }
-
-                     
+                        markers[userId].addListener('click', () => {
+                            showBusInfo(activeBuses[userId], markers[userId]);
+                        });
+                    } else {
+                        // Just update the marker's position
+                        markers[userId].setPosition(position);
+                    }
 
                     // Store bus data for route calculation
                     activeBuses[userId] = {
@@ -277,24 +264,25 @@
                         routeId: userData.routeId,
                         status: userData.status || 'Active',
                         timestamp: userData.timestamp || new Date().toISOString()
-
                     };
 
-                    markers[userId].addListener('click', () => {
-                        showBusInfo(activeBuses[userId], markers[userId]);
-                    });
-
                     bounds.extend(position);
-                    }
+                }
             });
+
+            // Remove markers for buses that are no longer active
+            for (let id in markers) {
+                if (!activeMarkerIds.has(id)) {
+                    markers[id].setMap(null);
+                    delete markers[id];
+                }
+            }
 
             // Update active buses count and status
             const activeBusCount = document.getElementById('activeBusCount');
             const busStatusMessage = document.getElementById('busStatusMessage');
-            
             if (activeBusCount && busStatusMessage) {
                 activeBusCount.textContent = busCount;
-                
                 if (busCount > 0) {
                     busStatusMessage.textContent = `${busCount} bus${busCount > 1 ? 'es' : ''} currently active on this route`;
                     busStatusMessage.className = 'text-success';
@@ -309,7 +297,7 @@
             if (lastUpdated) {
                 lastUpdated.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
             }
-            
+
             // Fit map to show all buses
             if (Object.keys(markers).length > 0) {
                 map.fitBounds(bounds);
@@ -595,105 +583,5 @@ function showBusInfo(bus, marker) {
         );
     }
 }
-
-// raja
-    // function showBusInfo(bus, marker) {
-    //     const content = `
-    //         <div class="bus-info-window">
-    //             <h3>Bus ${bus.busId || 'N/A'}</h3>
-    //             <p><strong>Route:</strong> ${bus.routeId ? bus.routeId.toUpperCase() : 'N/A'}</p>
-    //             <p><strong>Speed:</strong> ${bus.speed ? bus.speed + ' km/h' : 'N/A'}</p>
-    //             <p><strong>Last Updated:</strong> ${new Date(bus.timestamp).toLocaleTimeString()}</p>
-    //             ${userPosition ? `
-    //                 <button class="btn btn-primary" onclick="calculateRoute(
-    //                     {lat: ${userPosition.lat}, lng: ${userPosition.lng}},
-    //                     {lat: ${bus.lat}, lng: ${bus.lng}},
-    //                     ${JSON.stringify(bus)}
-    //                 )">
-    //                     <i class="fas fa-route"></i> Get Route & ETA
-    //                 </button>
-    //             ` : '<p class="text-muted">Enable location to get ETA</p>'}
-    //         </div>
-    //     `;
-        
-    //     if (infoWindow) {
-    //         infoWindow.close();
-    //     }
-        
-    //     infoWindow = new google.maps.InfoWindow({
-    //         content: content
-    //     });
-        
-    //     infoWindow.open(map, marker);
-    // }
-
-    // // Initialize map when the page loads
-    // window.initMap = initMap;
-
-    // Clean up when leaving the page
-    window.addEventListener('beforeunload', function() {
-        stopTracking();
-        if (userWatchId) {
-            navigator.geolocation.clearWatch(userWatchId);
-        }
-    });
-    </script>
+</script>
 {% endblock %}
-
-{% block content %}
-    <!-- Track Section -->
-    <section class="track-section">
-        <div class="container">
-            <div class="section-header">
-                <h1>Track Your Bus in Real-Time</h1>
-                <p>See where your bus is and get estimated arrival times</p>
-            </div>
-
-            <div class="track-filters">
-                <div class="filter-group">
-                    <label for="routeSelect">Select Route</label>
-                    <select id="routeSelect" class="form-control">
-                        <option value="" selected disabled>Choose a route</option>
-                        <option value="ev2">EV2 (BTK to Malir Halt)</option>
-                        <option value="ev4">EV4 (BTK to Ayesha Manzil)</option>
-                    </select>
-                </div>
-
-                <button class="btn btn-primary track-btn" disabled>
-                    <i class="fas fa-location-arrow"></i> Track Now
-                </button>
-            </div>
-
-            <div class="tracker-container">
-                <div class="tracker-map">
-                    <div id="busMap" class="bus-map"></div>
-                    <div class="map-overlay" id="mapOverlay">
-                        <div class="map-overlay-content">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <p>Select a route to track your bus</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="track-help">
-                <h3>Having Trouble?</h3>
-                <p>If you're experiencing issues tracking your bus, try these options:</p>
-                <div class="help-options">
-                    <a href="#" class="help-option" id="refreshTracking">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>Refresh Tracking</span>
-                    </a>
-                    <a href="{{ url_for('contact') }}" class="help-option">
-                        <i class="fas fa-headset"></i>
-                        <span>Contact Us</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-{% endblock %}
-
-{% block scripts %}{% endblock %}
