@@ -202,15 +202,47 @@ img {
     background-color: var(--primary-color);
     color: white;
 }
+.btn-secondary {
+    background-color: var(--primary-color);
+    color: white;
+}
 
 .btn-primary:hover {
     background-color: var(--primary-dark);
 }
+.btn-secondary:hover {
+    background-color: var(--primary-dark);
+}
 
-.btn-outline {
+/* .btn-outline {
     background-color: var(--primary-color);
     border: 1px solid var(--primary-color);
     color: white ;
+} */
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%; /* Ensure equal height for all feature cards */
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  background: white;
+}
+
+.feature-desc {
+  flex-grow: 1; /* Push the button down */
+  margin-bottom: 1rem;
+}
+
+.btn-outline {
+  background-color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  color: white ;  
+  align-self: center; /* optional: aligns button to the left */
+  margin-top: auto; /* ensures it's always at the bottom */
 }
 
 .btn-outline:hover {
@@ -244,9 +276,9 @@ img {
     position: absolute;
     top: 0;
     right: 0;
-    width: 50%;
-    height: 100%;
-    background-color: rgba(9, 166, 140, 0.05);
+    width: 125%;
+    height: 100%; 
+    background-color: rgba(0, 0, 0, 0.4);
     clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
     z-index: 1;
 }
@@ -270,7 +302,7 @@ img {
     background: linear-gradient(135deg, #09a68c 0%, #078a75 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent;
+    color: whitesmoke;
 }
 
 .hero-text {
