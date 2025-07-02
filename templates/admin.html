@@ -74,7 +74,8 @@
         <div class="admin-section">
           <h3 class="section-title">Add Driver</h3>
           <div class="admin-form">
-            <input id="name" class="admin-input" placeholder="Name" required>
+            <!-- <input id="name" class="admin-input" placeholder="Name" maxlength="9" required> -->
+            <input id="name" class="admin-input" placeholder="Name" maxlength="9" pattern="[A-Za-z\s]+" title="Only letters allowed" required>
             <input id="age" class="admin-input" placeholder="Age" type="number" required>
             <input id="cnic" class="admin-input" placeholder="CNIC (XXXXX-XXXXXX-X)" 
                    pattern="[0-9]{5}-[0-9]{7}-[0-9]" 
@@ -85,9 +86,10 @@
                    maxlength="11"
                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)"
                    title="Please enter a valid Pakistan phone number starting with 03">
-            <!-- <input id="experience" class="admin-input" type="number" placeholder="Experience (e.g., 5 years)"> -->
-            <input id="experience" class="admin-input" type="number" placeholder="Experience (e.g., 5 years)" 
-                   maxlength="2" oninput="if (this.value.length > 2) this.value = this.value.slice(0,2);">
+            <!-- <input id="experience" class="admin-input" type="number" placeholder="Experience (e.g., 5 years)" 
+                   maxlength="2" oninput="if (this.value.length > 2) this.value = this.value.slice(0,2);"> -->
+                 <input id="experience" class="admin-input" type="number" placeholder="Experience (e.g., 5 years)"
+                   min="0" oninput="validateExperience(this)"> 
 
             <select id="route" class="admin-select">
               <option value="">Select Route</option>
@@ -459,6 +461,16 @@
     formatCNIC(this);
   });
 
+  // Add event listener for for name
+  document.getElementById('name').addEventListener('input', function () {
+    this.value = this.value.replace(/[^a-zA-Z\s]/g, '');
+  });
+
+  //  function for  experience to limit non numeric values
+  function validateExperience(input) {
+    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 2);
+  }
+
   // Function to initialize existing buses
   async function initializeBuses() {
     const existingBuses = {
@@ -544,7 +556,7 @@
       Object.entries(drivers).forEach(([driverId, driver]) => {
         const row = document.createElement('tr');
           const accountStatus = driver.status || 'inactive';
-          const driverStatus = driver.isLoggedIn ? (driver.isOnTrip ? 'On Trip' : 'Logged In') : 'Offline';
+          const driverStatus = driver.isLoggedIn ? (driver.isOnTrip ? 'On Trip' : 'Online') : 'Offline';
           
           // Find the bus number from the buses collection
           let busNumber = '-';
@@ -679,11 +691,22 @@
     }
   `;
   document.head.appendChild(style);
-
+// validate phone number
   function validatePakistanPhone(phone) {
     const phoneRegex = /^03\d{9}$/;
     return phoneRegex.test(phone);
   }
+  // validate phone number NEW
+  const phoneInput = document.getElementById('phone');
+
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function () {
+      const isValid = validatePakistanPhone(this.value);
+      this.setCustomValidity(isValid ? '' : 'Please enter a valid Pakistan mobile number (03XXXXXXXXX)');
+      this.reportValidity();
+    });
+  }
+  
 
   function showSection(sectionId) {
     // Hide all sections
@@ -918,10 +941,14 @@
       return;
     }
 
-    if (!validatePakistanPhone(phone)) {
-      alert('Please enter a valid Pakistan phone number');
-      return;
-    }
+    // if (!validatePakistanPhone(phone)) {
+    //   alert('Please enter a valid Pakistan phone number');
+    //   return;
+    // }
+     if (phone && !validatePakistanPhone(phone)) {
+        alert("Please enter a valid Pakistani phone number (03XXXXXXXXX)");
+        return;
+      }
 
     try {
       // Call backend to add driver
