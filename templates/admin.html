@@ -232,7 +232,7 @@
                   <th>Bus Number</th>
                   <th>Route</th>
                   <th>Capacity</th>
-                  <th>Status</th>
+                  
                   <th>Action</th>
                 </tr>
               </thead>
@@ -753,7 +753,7 @@
                 <td>${bus.busNumber}</td>
                 <td>${bus.route}</td>
                 <td>${bus.capacity}</td>
-                <td><span class="bus-status ${bus.status || 'inactive'}">${bus.status || 'Inactive'}</span></td>
+                
                 <td>
                     <button class="btn btn-danger btn-sm" onclick="removeBus('${busId}')">
                         <i class="fas fa-trash"></i> Remove
