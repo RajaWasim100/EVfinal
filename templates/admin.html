@@ -76,7 +76,8 @@
           <div class="admin-form">
             <!-- <input id="name" class="admin-input" placeholder="Name" maxlength="9" required> -->
             <input id="name" class="admin-input" placeholder="Name" maxlength="9" pattern="[A-Za-z\s]+" title="Only letters allowed" required>
-            <input id="age" class="admin-input" placeholder="Age" type="number" required>
+            <input id="age" class="admin-input" placeholder="Age" type="number" required 
+                   maxlength="2" oninput="this.value = this.value.slice(0, 2);">
             <input id="cnic" class="admin-input" placeholder="CNIC (XXXXX-XXXXXX-X)" 
                    pattern="[0-9]{5}-[0-9]{7}-[0-9]" 
                    maxlength="15"
