@@ -18,20 +18,29 @@ logger = logging.getLogger(__name__)
 try:
     # Check if Firebase is already initialized
     if not firebase_admin._apps:
-        # Path to the JSON file
-        cred_path = "ev-app-9d9ad-firebase-adminsdk-fbsvc-4bf25d6bc4.json"
-        
-        if not os.path.exists(cred_path):
-            raise FileNotFoundError(f"Firebase credentials file not found at {cred_path}")
-            
+        cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or os.environ.get(
+            "FIREBASE_CREDENTIALS_PATH"
+        )
+        if not cred_path or not os.path.exists(cred_path):
+            raise FileNotFoundError(
+                "Set GOOGLE_APPLICATION_CREDENTIALS (or FIREBASE_CREDENTIALS_PATH) "
+                "to your Firebase service-account JSON. Do not commit that file."
+            )
+
         cred = credentials.Certificate(cred_path)
-        
-        # Initialize Firebase app with all required options
+
         firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://ev-app-9d9ad-default-rtdb.firebaseio.com/',
-            'projectId': 'ev-app-9d9ad',
-            'storageBucket': 'ev-app-9d9ad.appspot.com',
-            'authDomain': 'ev-app-9d9ad.firebaseapp.com'
+            'databaseURL': os.environ.get(
+                "FIREBASE_DATABASE_URL",
+                "https://ev-app-9d9ad-default-rtdb.firebaseio.com/",
+            ),
+            'projectId': os.environ.get("FIREBASE_PROJECT_ID", "ev-app-9d9ad"),
+            'storageBucket': os.environ.get(
+                "FIREBASE_STORAGE_BUCKET", "ev-app-9d9ad.appspot.com"
+            ),
+            'authDomain': os.environ.get(
+                "FIREBASE_AUTH_DOMAIN", "ev-app-9d9ad.firebaseapp.com"
+            ),
         })
         logger.info("Firebase initialized successfully")
     else:
@@ -41,7 +50,10 @@ except Exception as e:
     raise
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "spot-ev-secret-key")
+app.secret_key = os.environ.get("SESSION_SECRET")
+if not app.secret_key:
+    logger.warning("SESSION_SECRET is not set; using a development-only default")
+    app.secret_key = "dev-only-change-me"
 
 # List of admin emails
 ADMIN_EMAILS = [

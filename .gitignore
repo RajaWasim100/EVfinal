@@ -1,0 +1,26 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+env/
+
+# Secrets — never commit service accounts or env files
+.env
+.env.*
+!.env.example
+*firebase-adminsdk*.json
+google-credentials.json
+serviceAccount*.json
+*-adminsdk-*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
